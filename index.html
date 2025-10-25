@@ -520,8 +520,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <script>
-        
-function generatePropertyReportPDF(propertyData) {
+ function generatePropertyReportPDF(propertyData) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     
@@ -529,10 +528,11 @@ function generatePropertyReportPDF(propertyData) {
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 15;
     let yPos = 20;
+    let pageNumber = 1;
     
     // Colors
-    const primaryColor = [102, 126, 234]; // #667eea
-    const secondaryColor = [118, 75, 162]; // #764ba2
+    const primaryColor = [102, 126, 234];
+    const secondaryColor = [118, 75, 162];
     const textColor = [51, 51, 51];
     const lightGray = [245, 247, 250];
     
@@ -589,6 +589,131 @@ function generatePropertyReportPDF(propertyData) {
         return Number(value).toFixed(1) + '%';
     }
     
+    // Function to create chart canvas
+    function createBarChart(data, labels, title) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 350;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const chartX = 80;
+        const chartY = 60;
+        const chartWidth = 650;
+        const chartHeight = 240;
+        
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, canvas.width / 2, 30);
+        
+        const maxValue = Math.max(...data);
+        const scale = chartHeight / maxValue;
+        
+        const barWidth = chartWidth / data.length - 20;
+        data.forEach((value, index) => {
+            const barHeight = value * scale;
+            const x = chartX + (index * (chartWidth / data.length)) + 10;
+            const y = chartY + chartHeight - barHeight;
+            
+            const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, barWidth, barHeight);
+            
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(formatCurrency(value), x + barWidth / 2, y - 5);
+            
+            ctx.font = '11px Arial';
+            ctx.fillText(labels[index], x + barWidth / 2, chartY + chartHeight + 20);
+        });
+        
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(chartX, chartY);
+        ctx.lineTo(chartX, chartY + chartHeight);
+        ctx.lineTo(chartX + chartWidth, chartY + chartHeight);
+        ctx.stroke();
+        
+        return canvas.toDataURL('image/png');
+    }
+    
+    function createLineChart(data, labels, title) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 350;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const chartX = 80;
+        const chartY = 60;
+        const chartWidth = 650;
+        const chartHeight = 240;
+        
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, canvas.width / 2, 30);
+        
+        const maxValue = Math.max(...data);
+        const minValue = Math.min(...data);
+        const range = maxValue - minValue;
+        const scale = chartHeight / (range * 1.1);
+        
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(chartX, chartY);
+        ctx.lineTo(chartX, chartY + chartHeight);
+        ctx.lineTo(chartX + chartWidth, chartY + chartHeight);
+        ctx.stroke();
+        
+        ctx.strokeStyle = '#667eea';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        
+        data.forEach((value, index) => {
+            const x = chartX + (index * (chartWidth / (data.length - 1)));
+            const y = chartY + chartHeight - ((value - minValue) * scale);
+            
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        ctx.stroke();
+        
+        data.forEach((value, index) => {
+            const x = chartX + (index * (chartWidth / (data.length - 1)));
+            const y = chartY + chartHeight - ((value - minValue) * scale);
+            
+            ctx.fillStyle = '#764ba2';
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 11px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(formatCurrency(value), x, y - 15);
+            
+            ctx.font = '11px Arial';
+            ctx.fillText(labels[index], x, chartY + chartHeight + 20);
+        });
+        
+        return canvas.toDataURL('image/png');
+    }
+    
     // PAGE 1: COVER PAGE
     doc.setFillColor(...primaryColor);
     doc.rect(0, 0, pageWidth, pageHeight, 'F');
@@ -618,9 +743,32 @@ function generatePropertyReportPDF(propertyData) {
     
     addFooter(1);
     
-    // PAGE 2: OVERVIEW
+    // PAGE 2: PROPERTY IMAGES & OVERVIEW
     doc.addPage();
-    addHeader('Overview', propertyData.name);
+    addHeader('Property Overview', propertyData.name);
+    
+    // Add property images if available
+    if (propertyData.images && propertyData.images.length > 0) {
+        const imgWidth = (pageWidth - 3 * margin) / 2;
+        const imgHeight = 50;
+        let xPos = margin;
+        let imgYPos = yPos;
+        
+        propertyData.images.slice(0, 2).forEach((imageUrl, index) => {
+            try {
+                doc.addImage(imageUrl, 'JPEG', xPos, imgYPos, imgWidth, imgHeight);
+            } catch (e) {
+                doc.setFillColor(220, 220, 220);
+                doc.rect(xPos, imgYPos, imgWidth, imgHeight, 'F');
+                doc.setTextColor(...textColor);
+                doc.setFontSize(10);
+                doc.text('Property Image ' + (index + 1), xPos + imgWidth / 2, imgYPos + imgHeight / 2, { align: 'center' });
+            }
+            xPos = pageWidth - margin - imgWidth;
+        });
+        
+        yPos = imgYPos + imgHeight + 15;
+    }
     
     // Purchase Info Box
     addSectionTitle('Purchase Info');
@@ -644,7 +792,7 @@ function generatePropertyReportPDF(propertyData) {
     
     yPos += 5;
     
-    // Income Analysis
+    // Income Analysis with Chart
     addSectionTitle('Income Analysis');
     
     const incomeData = [
@@ -665,6 +813,15 @@ function generatePropertyReportPDF(propertyData) {
     });
     
     yPos = doc.lastAutoTable.finalY + 10;
+    
+    // Add Income Chart
+    const incomeChart = createBarChart(
+        [propertyData.monthlyNOI, propertyData.monthlyCashFlow],
+        ['Monthly NOI', 'Monthly Cash Flow'],
+        'Monthly Income Comparison'
+    );
+    doc.addImage(incomeChart, 'PNG', margin, yPos, pageWidth - 2 * margin, 60);
+    yPos += 65;
     
     // Financial Metrics
     addSectionTitle('Financial Metrics');
@@ -691,7 +848,6 @@ function generatePropertyReportPDF(propertyData) {
     doc.addPage();
     addHeader('Purchase Analysis', propertyData.name);
     
-    // Purchase Info
     addSectionTitle('Purchase Info');
     
     const purchaseAnalysis = [
@@ -717,7 +873,6 @@ function generatePropertyReportPDF(propertyData) {
     
     yPos += 5;
     
-    // Property Stats
     const propertyStats = [
         ['Total Number of Units', propertyData.units],
         ['Cost per Unit', formatCurrency(propertyData.costPerUnit)],
@@ -735,7 +890,6 @@ function generatePropertyReportPDF(propertyData) {
     
     yPos += 5;
     
-    // Mortgages Table
     addSectionTitle('Mortgages');
     
     const mortgageData = [
@@ -762,7 +916,6 @@ function generatePropertyReportPDF(propertyData) {
     
     yPos = doc.lastAutoTable.finalY + 10;
     
-    // Financial Metrics (Year 1)
     addSectionTitle('Financial Metrics (Year 1)');
     
     const year1Metrics = [
@@ -788,7 +941,6 @@ function generatePropertyReportPDF(propertyData) {
     doc.addPage();
     addHeader('Purchase Analysis (Cont.)', propertyData.name);
     
-    // Income Table
     addSectionTitle('Income');
     
     const incomeTableData = [
@@ -817,7 +969,6 @@ function generatePropertyReportPDF(propertyData) {
     
     yPos = doc.lastAutoTable.finalY + 10;
     
-    // Expenses Table
     addSectionTitle('Expenses (% of Income)');
     
     const expensesData = [
@@ -858,7 +1009,6 @@ function generatePropertyReportPDF(propertyData) {
     
     yPos = doc.lastAutoTable.finalY + 10;
     
-    // Net Performance
     addSectionTitle('Net Performance');
     
     const netPerformance = [
@@ -882,11 +1032,21 @@ function generatePropertyReportPDF(propertyData) {
     
     addFooter(4);
     
-    // PAGE 5: BUY AND HOLD PROJECTION
+    // PAGE 5: BUY AND HOLD PROJECTION WITH CHART
     doc.addPage();
     addHeader('Buy and Hold Projection', propertyData.name);
     
-    // Income Projection
+    // Cash Flow Projection Chart
+    const cashFlowData = [39002, 44139, 49343, 59955, 87717];
+    const cashFlowLabels = ['Year 1', 'Year 2', 'Year 3', 'Year 5', 'Year 10'];
+    const cashFlowChart = createLineChart(
+        cashFlowData,
+        cashFlowLabels,
+        'Cash Flow Projection (5-Year Outlook)'
+    );
+    doc.addImage(cashFlowChart, 'PNG', margin, yPos, pageWidth - 2 * margin, 70);
+    yPos += 75;
+    
     addSectionTitle('Income Projection');
     
     const incomeProjection = [
@@ -914,7 +1074,6 @@ function generatePropertyReportPDF(propertyData) {
     
     yPos = doc.lastAutoTable.finalY + 10;
     
-    // Income Analysis Projection
     addSectionTitle('Income Analysis');
     
     const analysisProjection = [
@@ -944,7 +1103,6 @@ function generatePropertyReportPDF(propertyData) {
     doc.addPage();
     addHeader('Buy and Hold Projection (Cont.)', propertyData.name);
     
-    // Loan Analysis
     addSectionTitle('Loan Analysis');
     
     const loanAnalysis = [
@@ -969,7 +1127,6 @@ function generatePropertyReportPDF(propertyData) {
     
     yPos = doc.lastAutoTable.finalY + 10;
     
-    // Sale Analysis
     addSectionTitle('Sale Analysis');
     
     const saleAnalysis = [
@@ -1025,7 +1182,6 @@ function generatePropertyReportPDF(propertyData) {
     
     yPos = doc.lastAutoTable.finalY + 15;
     
-    // Totals
     addSectionTitle('Totals for Year 1');
     
     const totals = [
@@ -1076,7 +1232,7 @@ function generatePropertyReportPDF(propertyData) {
     doc.save(`Property_Report_${propertyData.name.replace(/\s+/g, '_')}.pdf`);
 }
 
-// Sample Property Data Structure
+// Sample Property Data Structure with images
 const samplePropertyData = {
     name: 'Comfort Suites Conway',
     address: '705 Museum Road',
@@ -1100,8 +1256,21 @@ const samplePropertyData = {
     buyingCosts: 155000,
     initialImprovements: 0,
     costPerUnit: 67857,
-    avgRentPerUnit: 1442
+    avgRentPerUnit: 1442,
+    // Add property images (use actual image URLs or base64 encoded images)
+    images: [
+         'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg',
+         'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg',
+         'https://www.pexels.com/photo/lighted-beige-house-1396132/',
+         'https://www.pexels.com/photo/black-and-brown-wooden-house-1105754/'
+    ]
 };
+
+// Example usage:
+// generatePropertyReportPDF(samplePropertyData);
+
+// Example usage:
+// generatePropertyReportPDF(samplePropertyData);
     </script>
 </head>
 <body>
