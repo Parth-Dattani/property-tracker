@@ -26,6 +26,11 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
             position: relative;
             padding-bottom: 60px;
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-container.drawer-open {
+            transform: translateX(280px);
         }
         
         .status-bar {
@@ -82,11 +87,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.3s ease;
-        }
-        
-        .menu-btn:active {
-            background: rgba(255,255,255,0.3);
         }
         
         .content {
@@ -230,19 +230,15 @@
             font-family: inherit;
         }
         
+        textarea.input-field {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
         .input-field:focus {
             outline: none;
             border-color: #667eea;
             background: white;
-        }
-        
-        .form-row {
-            display: flex;
-            gap: 12px;
-        }
-        
-        .form-col {
-            flex: 1;
         }
         
         .result-box {
@@ -357,6 +353,10 @@
             margin-bottom: 4px;
         }
         
+        .page-break {
+            margin-bottom: 0;
+        }
+        
         .info-box {
             background: #f8f9fa;
             padding: 12px;
@@ -400,14 +400,15 @@
         .side-drawer {
             position: fixed;
             top: 0;
-            left: -100%;
+            left: -280px;
             width: 280px;
             height: 100%;
             background: white;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            z-index: 10000;
+            z-index: 100;
             transition: left 0.3s ease;
             overflow-y: auto;
+            padding-top: 20px;
         }
         
         .side-drawer.open {
@@ -421,15 +422,12 @@
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.5);
-            z-index: 9999;
+            z-index: 99;
             display: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
         }
         
         .drawer-overlay.active {
             display: block;
-            opacity: 1;
         }
         
         .drawer-header {
@@ -480,7 +478,7 @@
             transition: background 0.2s;
         }
         
-        .drawer-menu a:active {
+        .drawer-menu a:hover {
             background: #f5f7fa;
         }
         
@@ -497,37 +495,6 @@
             text-align: center;
         }
         
-        .tab-container {
-            display: flex;
-            border-bottom: 1px solid #e0e0e0;
-            margin-bottom: 16px;
-            overflow-x: auto;
-        }
-        
-        .tab {
-            padding: 12px 16px;
-            background: none;
-            border: none;
-            font-size: 14px;
-            font-weight: 500;
-            color: #666;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        
-        .tab.active {
-            color: #667eea;
-            border-bottom: 2px solid #667eea;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
         @media (max-width: 480px) {
             .mobile-container {
                 max-width: 100%;
@@ -540,13 +507,604 @@
             
             .side-drawer {
                 width: 85%;
+                left: -85%;
+            }
+            
+            .mobile-container.drawer-open {
+                transform: translateX(85%);
             }
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <script>
+        
+function generatePropertyReportPDF(propertyData) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    let yPos = 20;
+    
+    // Colors
+    const primaryColor = [102, 126, 234]; // #667eea
+    const secondaryColor = [118, 75, 162]; // #764ba2
+    const textColor = [51, 51, 51];
+    const lightGray = [245, 247, 250];
+    
+    // Helper Functions
+    function addHeader(title, subtitle) {
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, pageWidth, 40, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, margin, 20);
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(subtitle, margin, 28);
+        
+        yPos = 50;
+    }
+    
+    function addFooter(pageNum) {
+        doc.setFontSize(10);
+        doc.setTextColor(...textColor);
+        doc.text(`www.conwayhospitality.com`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        doc.text(`${pageNum}`, pageWidth - margin, pageHeight - 10);
+    }
+    
+    function checkPageBreak(neededSpace) {
+        if (yPos + neededSpace > pageHeight - 20) {
+            doc.addPage();
+            yPos = 20;
+            return true;
+        }
+        return false;
+    }
+    
+    function addSectionTitle(title) {
+        checkPageBreak(15);
+        doc.setFillColor(...lightGray);
+        doc.rect(margin, yPos - 5, pageWidth - 2 * margin, 10, 'F');
+        
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text(title, margin + 2, yPos);
+        yPos += 15;
+    }
+    
+    function formatCurrency(value) {
+        return '$' + Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+    
+    function formatPercent(value) {
+        return Number(value).toFixed(1) + '%';
+    }
+    
+    // PAGE 1: COVER PAGE
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(32);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Property Report', pageWidth / 2, 80, { align: 'center' });
+    
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'normal');
+    doc.text(propertyData.name, pageWidth / 2, 100, { align: 'center' });
+    
+    doc.setFontSize(14);
+    doc.text(propertyData.address, pageWidth / 2, 115, { align: 'center' });
+    doc.text(`${propertyData.city}, ${propertyData.state} ${propertyData.zipCode}`, pageWidth / 2, 125, { align: 'center' });
+    doc.text('United States', pageWidth / 2, 135, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text('Presented by:', pageWidth / 2, 160, { align: 'center' });
+    doc.text('Conway Management', pageWidth / 2, 170, { align: 'center' });
+    doc.text('400 W Capitol Ave, Suite # 1394', pageWidth / 2, 180, { align: 'center' });
+    doc.text('Little Rock, AR 72201', pageWidth / 2, 190, { align: 'center' });
+    doc.text('Office: 501-450-3084', pageWidth / 2, 205, { align: 'center' });
+    doc.text('investments@conwayhospitality.com', pageWidth / 2, 215, { align: 'center' });
+    doc.text('www.conwayhospitality.com', pageWidth / 2, 225, { align: 'center' });
+    
+    addFooter(1);
+    
+    // PAGE 2: OVERVIEW
+    doc.addPage();
+    addHeader('Overview', propertyData.name);
+    
+    // Purchase Info Box
+    addSectionTitle('Purchase Info');
+    doc.setFontSize(11);
+    doc.setTextColor(...textColor);
+    doc.setFont('helvetica', 'normal');
+    
+    const purchaseInfo = [
+        ['Total Number of Units', propertyData.units],
+        ['Purchase Price', formatCurrency(propertyData.purchasePrice)],
+        ['Initial Cash Invested', formatCurrency(propertyData.initialCash)]
+    ];
+    
+    purchaseInfo.forEach(([label, value]) => {
+        doc.text(label, margin, yPos);
+        doc.setFont('helvetica', 'bold');
+        doc.text(String(value), pageWidth - margin, yPos, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        yPos += 8;
+    });
+    
+    yPos += 5;
+    
+    // Income Analysis
+    addSectionTitle('Income Analysis');
+    
+    const incomeData = [
+        ['', 'Monthly', 'Annual'],
+        ['Net Operating Income', formatCurrency(propertyData.monthlyNOI), formatCurrency(propertyData.annualNOI)],
+        ['Cash Flow', formatCurrency(propertyData.monthlyCashFlow), formatCurrency(propertyData.annualCashFlow)]
+    ];
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [incomeData[0]],
+        body: incomeData.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 11, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 10 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        margin: { left: margin, right: margin }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 10;
+    
+    // Financial Metrics
+    addSectionTitle('Financial Metrics');
+    
+    const metricsData = [
+        ['Cap Rate (Purchase Price)', formatPercent(propertyData.capRate)],
+        ['Cash on Cash Return (Year 1)', formatPercent(propertyData.cashOnCashReturn)],
+        ['Internal Rate of Return (Year 3)', formatPercent(propertyData.irrYear3)],
+        ['Sale Price (Year 3)', formatCurrency(propertyData.salePriceYear3)]
+    ];
+    
+    metricsData.forEach(([label, value]) => {
+        checkPageBreak(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(label, margin, yPos);
+        doc.setFont('helvetica', 'bold');
+        doc.text(value, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 8;
+    });
+    
+    addFooter(2);
+    
+    // PAGE 3: PURCHASE ANALYSIS
+    doc.addPage();
+    addHeader('Purchase Analysis', propertyData.name);
+    
+    // Purchase Info
+    addSectionTitle('Purchase Info');
+    
+    const purchaseAnalysis = [
+        ['Purchase Price', formatCurrency(propertyData.purchasePrice)],
+        ['- First Mortgage', formatCurrency(-propertyData.firstMortgage)],
+        ['- Second Mortgage', formatCurrency(-propertyData.secondMortgage)],
+        ['= Down Payment', formatCurrency(propertyData.downPayment)],
+        ['+ Buying Costs', formatCurrency(propertyData.buyingCosts)],
+        ['+ Initial Improvements', formatCurrency(propertyData.initialImprovements)],
+        ['= Initial Cash Invested', formatCurrency(propertyData.initialCash)]
+    ];
+    
+    purchaseAnalysis.forEach(([label, value]) => {
+        checkPageBreak(8);
+        doc.setFont('helvetica', 'normal');
+        if (label.startsWith('=')) {
+            doc.setFont('helvetica', 'bold');
+        }
+        doc.text(label, margin, yPos);
+        doc.text(value, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 7;
+    });
+    
+    yPos += 5;
+    
+    // Property Stats
+    const propertyStats = [
+        ['Total Number of Units', propertyData.units],
+        ['Cost per Unit', formatCurrency(propertyData.costPerUnit)],
+        ['Average Monthly Rent per Unit', formatCurrency(propertyData.avgRentPerUnit)]
+    ];
+    
+    propertyStats.forEach(([label, value]) => {
+        checkPageBreak(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(label, margin, yPos);
+        doc.setFont('helvetica', 'bold');
+        doc.text(String(value), pageWidth - margin, yPos, { align: 'right' });
+        yPos += 8;
+    });
+    
+    yPos += 5;
+    
+    // Mortgages Table
+    addSectionTitle('Mortgages');
+    
+    const mortgageData = [
+        ['', 'First', 'Second'],
+        ['Loan-To-Cost Ratio', '67.11%', '21.05%'],
+        ['Loan-To-Value Ratio', '67.11%', '21.05%'],
+        ['Loan Amount', formatCurrency(3187500), formatCurrency(1000000)],
+        ['Loan Type', 'Amortizing', 'Amortizing'],
+        ['Term', '25 Years', '10 Years'],
+        ['Interest Rate', '4.5%', '4.5%'],
+        ['Payment', formatCurrency(17717.16), formatCurrency(10363.84)]
+    ];
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [mortgageData[0]],
+        body: mortgageData.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 11, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 9 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        margin: { left: margin, right: margin }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 10;
+    
+    // Financial Metrics (Year 1)
+    addSectionTitle('Financial Metrics (Year 1)');
+    
+    const year1Metrics = [
+        ['Annual Gross Rent Multiplier', '3.9'],
+        ['Operating Expense Ratio', '69.5%'],
+        ['Debt Coverage Ratio', '1.12'],
+        ['Cap Rate (Purchase Price)', '7.9%'],
+        ['Cash on Cash Return', '5.4%']
+    ];
+    
+    year1Metrics.forEach(([label, value]) => {
+        checkPageBreak(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(label, margin, yPos);
+        doc.setFont('helvetica', 'bold');
+        doc.text(value, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 8;
+    });
+    
+    addFooter(3);
+    
+    // PAGE 4: INCOME & EXPENSES
+    doc.addPage();
+    addHeader('Purchase Analysis (Cont.)', propertyData.name);
+    
+    // Income Table
+    addSectionTitle('Income');
+    
+    const incomeTableData = [
+        ['Income Source', 'Monthly', 'Annual'],
+        ['Gross Rent', formatCurrency(100970), formatCurrency(1211646)],
+        ['Vacancy Loss', formatCurrency(0), formatCurrency(0)],
+        ['Meeting Room', formatCurrency(420), formatCurrency(5037)],
+        ['Convenient Store', formatCurrency(1391), formatCurrency(16689)],
+        ['Miscellaneous', formatCurrency(98), formatCurrency(1176)],
+        ['Operating Income', formatCurrency(102879), formatCurrency(1234548)]
+    ];
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [incomeTableData[0]],
+        body: incomeTableData.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 10, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 9 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        margin: { left: margin, right: margin },
+        foot: [[{ content: 'Operating Income', colSpan: 1, styles: { fontStyle: 'bold' } }, 
+                formatCurrency(102879), formatCurrency(1234548)]],
+        footStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 10;
+    
+    // Expenses Table
+    addSectionTitle('Expenses (% of Income)');
+    
+    const expensesData = [
+        ['Expense', 'Monthly', 'Annual', '%'],
+        ['Advertising & Marketing', '-$283', '-$3,395', '0%'],
+        ['Bank Charges', '-$103', '-$1,235', '0%'],
+        ['Breakfast', '-$4,630', '-$55,555', '4%'],
+        ['Commissions', '-$3,086', '-$37,036', '3%'],
+        ['Convenient Store', '-$720', '-$8,642', '1%'],
+        ['Credit Card Fees', '-$2,613', '-$31,358', '3%'],
+        ['Franchise Fee Expense', '-$10,288', '-$123,455', '10%'],
+        ['Insurance - GL & WC', '-$2,500', '-$30,000', '2%'],
+        ['Maintenance & Repairs', '-$4,630', '-$55,555', '4%'],
+        ['Management Fees', '-$4,115', '-$49,382', '4%'],
+        ['Salaries', '-$21,605', '-$259,255', '21%'],
+        ['Taxes - General', '-$3,333', '-$40,000', '3%'],
+        ['Utilities', '-$6,430', '-$77,159', '6%']
+    ];
+    
+    checkPageBreak(80);
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [expensesData[0]],
+        body: expensesData.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 9, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 8 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        margin: { left: margin, right: margin },
+        columnStyles: {
+            0: { cellWidth: 70 },
+            1: { cellWidth: 30, halign: 'right' },
+            2: { cellWidth: 35, halign: 'right' },
+            3: { cellWidth: 20, halign: 'center' }
+        }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 10;
+    
+    // Net Performance
+    addSectionTitle('Net Performance');
+    
+    const netPerformance = [
+        ['', 'Monthly', 'Annual'],
+        ['Net Operating Income', formatCurrency(31331), formatCurrency(375974)],
+        ['- Mortgage Payments', formatCurrency(-28081), formatCurrency(-336972)],
+        ['- Year 1 Improvements', formatCurrency(0), formatCurrency(0)],
+        ['= Cash Flow', formatCurrency(3250), formatCurrency(39002)]
+    ];
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [netPerformance[0]],
+        body: netPerformance.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 10, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 9 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        margin: { left: margin, right: margin }
+    });
+    
+    addFooter(4);
+    
+    // PAGE 5: BUY AND HOLD PROJECTION
+    doc.addPage();
+    addHeader('Buy and Hold Projection', propertyData.name);
+    
+    // Income Projection
+    addSectionTitle('Income Projection');
+    
+    const incomeProjection = [
+        ['Income', 'Year 1', 'Year 2', 'Year 3', 'Year 5', 'Year 10'],
+        ['Gross Rent', '$1,211,646', '$1,229,821', '$1,248,268', '$1,285,997', '$1,385,384'],
+        ['Meeting Room', '$5,037', '$5,113', '$5,189', '$5,346', '$5,759'],
+        ['Convenient Store', '$16,689', '$16,939', '$17,193', '$17,713', '$19,082'],
+        ['Miscellaneous', '$1,176', '$1,194', '$1,212', '$1,248', '$1,345'],
+        ['Operating Income', '$1,234,548', '$1,253,066', '$1,271,862', '$1,310,304', '$1,411,570']
+    ];
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [incomeProjection[0]],
+        body: incomeProjection.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 7 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        margin: { left: margin, right: margin },
+        columnStyles: {
+            0: { cellWidth: 50 }
+        }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 10;
+    
+    // Income Analysis Projection
+    addSectionTitle('Income Analysis');
+    
+    const analysisProjection = [
+        ['', 'Year 1', 'Year 2', 'Year 3', 'Year 5', 'Year 10'],
+        ['Net Operating Income', '$375,974', '$381,111', '$386,315', '$396,927', '$424,689'],
+        ['- Mortgage Payments', '-$336,972', '-$336,972', '-$336,972', '-$336,972', '-$336,972'],
+        ['= Cash Flow', '$39,002', '$44,139', '$49,343', '$59,955', '$87,717'],
+        ['Cap Rate (Purchase)', '7.9%', '8.0%', '8.1%', '8.4%', '8.9%'],
+        ['Cash on Cash Return', '5.4%', '6.2%', '6.9%', '8.4%', '12.2%'],
+        ['Return on Equity', '5.1%', '4.6%', '4.2%', '3.7%', '3.0%']
+    ];
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [analysisProjection[0]],
+        body: analysisProjection.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 7 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        margin: { left: margin, right: margin }
+    });
+    
+    addFooter(5);
+    
+    // PAGE 6: LOAN & SALE ANALYSIS
+    doc.addPage();
+    addHeader('Buy and Hold Projection (Cont.)', propertyData.name);
+    
+    // Loan Analysis
+    addSectionTitle('Loan Analysis');
+    
+    const loanAnalysis = [
+        ['', 'Year 1', 'Year 2', 'Year 3', 'Year 5', 'Year 10'],
+        ['Market Value', '$4,797,500', '$4,845,475', '$4,893,930', '$4,992,298', '$5,246,955'],
+        ['- Loan Balance', '-$4,035,863', '-$3,877,261', '-$3,711,372', '-$3,356,381', '-$2,315,989'],
+        ['= Equity', '$761,637', '$968,214', '$1,182,558', '$1,635,917', '$2,930,966'],
+        ['Loan-to-Value Ratio', '84.1%', '80.0%', '75.8%', '67.2%', '44.1%'],
+        ['Cash-Out Refi', '-$197,863', '-$881', '$203,772', '$637,457', '$1,881,575']
+    ];
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [loanAnalysis[0]],
+        body: loanAnalysis.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 7 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        margin: { left: margin, right: margin }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 10;
+    
+    // Sale Analysis
+    addSectionTitle('Sale Analysis');
+    
+    const saleAnalysis = [
+        ['', 'Year 1', 'Year 2', 'Year 3', 'Year 5', 'Year 10'],
+        ['Equity', '$761,637', '$968,214', '$1,182,558', '$1,635,917', '$2,930,966'],
+        ['- Selling Costs', '$0', '$0', '$0', '$0', '$0'],
+        ['= Proceeds After Sale', '$761,637', '$968,214', '$1,182,558', '$1,635,917', '$2,930,966'],
+        ['+ Cumulative Cash Flow', '$39,002', '$83,141', '$132,484', '$247,054', '$629,400'],
+        ['- Initial Cash Invested', '-$717,500', '-$717,500', '-$717,500', '-$717,500', '-$717,500'],
+        ['= Net Profit', '$83,138', '$333,855', '$597,542', '$1,165,471', '$2,842,865'],
+        ['Internal Rate of Return', '11.6%', '21.5%', '23.3%', '22.9%', '19.7%'],
+        ['Return on Investment', '12%', '47%', '83%', '162%', '396%']
+    ];
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [saleAnalysis[0]],
+        body: saleAnalysis.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 7 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        margin: { left: margin, right: margin }
+    });
+    
+    addFooter(6);
+    
+    // PAGE 7: RENT ROLL
+    doc.addPage();
+    addHeader('Rent Roll', propertyData.name);
+    
+    addSectionTitle('Unit Description');
+    
+    const rentRoll = [
+        ['Unit Description', 'Square Feet', 'Units of This Type', 'Rent (Per Unit)'],
+        ['ADA King Suites', '0', '3', 'No Rent'],
+        ['ADA Queen Suites', '0', '1', 'No Rent'],
+        ['Jacuzzi King Suites', '0', '2', 'No Rent'],
+        ['King Suites', '0', '29', 'No Rent'],
+        ['Queen Suites', '0', '35', 'No Rent']
+    ];
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [rentRoll[0]],
+        body: rentRoll.slice(1),
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 10, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 9 },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        margin: { left: margin, right: margin }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 15;
+    
+    // Totals
+    addSectionTitle('Totals for Year 1');
+    
+    const totals = [
+        ['Total Number of Units', '70'],
+        ['Total Area (Sum of Units)', '0 Square Feet'],
+        ['Total Rent (Single Value)', '$100,970 Per Month, $1,211,646 Per Year']
+    ];
+    
+    totals.forEach(([label, value]) => {
+        checkPageBreak(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(label, margin, yPos);
+        doc.setFont('helvetica', 'bold');
+        doc.text(value, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 10;
+    });
+    
+    yPos += 5;
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(10);
+    doc.text('The total rent was estimated as a single value for the entire property.', margin, yPos);
+    
+    addFooter(7);
+    
+    // PAGE 8: CLOSING COSTS
+    doc.addPage();
+    addHeader('Itemized Closing Costs', propertyData.name);
+    
+    addSectionTitle('Buying Costs');
+    
+    const closingCosts = [
+        ['Application Fee', formatCurrency(55000)],
+        ['Working Capital', formatCurrency(100000)],
+        ['Total', formatCurrency(155000)]
+    ];
+    
+    closingCosts.forEach(([label, value]) => {
+        checkPageBreak(8);
+        doc.setFont('helvetica', label === 'Total' ? 'bold' : 'normal');
+        doc.text(label, margin, yPos);
+        doc.text(value, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 10;
+    });
+    
+    addFooter(8);
+    
+    // Save the PDF
+    doc.save(`Property_Report_${propertyData.name.replace(/\s+/g, '_')}.pdf`);
+}
+
+// Sample Property Data Structure
+const samplePropertyData = {
+    name: 'Comfort Suites Conway',
+    address: '705 Museum Road',
+    city: 'Conway',
+    state: 'AR',
+    zipCode: '72032',
+    units: 70,
+    purchasePrice: 4750000,
+    initialCash: 717500,
+    monthlyNOI: 31331,
+    annualNOI: 375974,
+    monthlyCashFlow: 3250,
+    annualCashFlow: 39002,
+    capRate: 7.9,
+    cashOnCashReturn: 5.4,
+    irrYear3: 23.3,
+    salePriceYear3: 4893930,
+    firstMortgage: 3187500,
+    secondMortgage: 1000000,
+    downPayment: 562500,
+    buyingCosts: 155000,
+    initialImprovements: 0,
+    costPerUnit: 67857,
+    avgRentPerUnit: 1442
+};
+    </script>
 </head>
 <body>
-
-<div class="drawer-overlay" id="drawerOverlay"></div>
 
 <div class="side-drawer" id="sideDrawer">
     <div class="drawer-header">
@@ -558,17 +1116,31 @@
     </div>
     
     <ul class="drawer-menu">
-        <li><a href="#" class="drawer-nav-item active" data-screen="dashboard"><span class="icon">🏠</span><span>Dashboard</span></a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="properties"><span class="icon">🏢</span><span>Properties</span></a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="add-property"><span class="icon">➕</span><span>Add Property</span></a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="loan-management"><span class="icon">💳</span><span>Loan Management</span></a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="mortgage-calculator"><span class="icon">🧮</span><span>Mortgage Calculator</span></a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="roi-calculator"><span class="icon">📈</span><span>ROI Calculator</span></a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="expenses"><span class="icon">💸</span><span>Expenses</span></a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="income"><span class="icon">💵</span><span>Income</span></a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="rent-roll"><span class="icon">🏘️</span><span>Rent Roll</span></a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="analytics"><span class="icon">📊</span><span>Analytics</span></a></li>
-         <li><a href="#" class="drawer-nav-item" data-screen="future-value-calculator">
+        <li><a href="#" class="drawer-nav-item active" data-screen="dashboard">
+            <span class="icon">🏠</span>
+            <span>Dashboard</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="properties">
+            <span class="icon">🏢</span>
+            <span>Properties</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="add-property">
+            <span class="icon">➕</span>
+            <span>Add Property</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="loan-management">
+            <span class="icon">💳</span>
+            <span>Loan Management</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="mortgage-calculator">
+            <span class="icon">🧮</span>
+            <span>Mortgage Calculator</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="roi-calculator">
+            <span class="icon">📈</span>
+            <span>ROI Calculator</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="future-value-calculator">
             <span class="icon">💰</span>
             <span>Future Value Calculator</span>
         </a></li>
@@ -576,15 +1148,45 @@
             <span class="icon">💸</span>
             <span>Present Value Calculator</span>
         </a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="cash-flow"><span class="icon">💰</span><span>Cash Flow</span></a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="alerts"><span class="icon">🔔</span><span>Notifications</span></a></li>
-        <li><a href="#" class="drawer-nav-item" data-screen="settings"><span class="icon">⚙️</span><span>Settings</span></a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="down-payment-calculator">
+            <span class="icon">🏦</span>
+            <span>Down Payment Calculator</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="expenses">
+            <span class="icon">💸</span>
+            <span>Expenses</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="income">
+            <span class="icon">💵</span>
+            <span>Income</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="rent-roll">
+            <span class="icon">🏘️</span>
+            <span>Rent Roll</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="analytics">
+            <span class="icon">📊</span>
+            <span>Analytics</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="cash-flow">
+            <span class="icon">📊</span>
+            <span>Cash Flow</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="alerts">
+            <span class="icon">🔔</span>
+            <span>Notifications</span>
+        </a></li>
+        <li><a href="#" class="drawer-nav-item" data-screen="settings">
+            <span class="icon">⚙️</span>
+            <span>Settings</span>
+        </a></li>
     </ul>
 </div>
 
+<div class="drawer-overlay" id="drawerOverlay"></div>
+
 <div class="mobile-container" id="mobileContainer">
 
-<!-- SCREEN 1: DASHBOARD -->
 <div class="screen active" id="dashboard">
     <div class="status-bar">
         <span>9:41</span>
@@ -597,7 +1199,7 @@
             <p>Your Portfolio</p>
         </div>
         <div class="header-icon">🏠</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
+        <button class="menu-btn" id="menuBtn">☰</button>
     </div>
     
     <div class="content">
@@ -659,6 +1261,10 @@
                 <label>Cap Rate:</label>
                 <value>7.9%</value>
             </div>
+            <div class="property-info">
+                <label>Cash Flow:</label>
+                <value>$3,250</value>
+            </div>
         </div>
         
         <div class="property-card">
@@ -683,7 +1289,6 @@
     </div>
 </div>
 
-<!-- SCREEN 2: PROPERTIES LIST -->
 <div class="screen" id="properties">
     <div class="status-bar">
         <span>9:41</span>
@@ -696,7 +1301,7 @@
             <p>Portfolio</p>
         </div>
         <div class="header-icon">🏠</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
+        <button class="menu-btn">☰</button>
     </div>
     
     <div class="content">
@@ -718,7 +1323,7 @@
                 <label>ROI:</label>
                 <value style="color: #10b981;">5.4%</value>
             </div>
-            <button class="btn btn-primary" style="width: 100%; margin-top: 10px;">View Details</button>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 10px; font-size: 12px;">View Details</button>
         </div>
         
         <div class="property-card">
@@ -739,14 +1344,13 @@
                 <label>ROI:</label>
                 <value style="color: #10b981;">8.2%</value>
             </div>
-            <button class="btn btn-primary" style="width: 100%; margin-top: 10px;">View Details</button>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 10px; font-size: 12px;">View Details</button>
         </div>
         
-        <button class="btn btn-success" style="width: 100%; margin-top: 16px;" onclick="switchScreen('add-property')">Add New Property</button>
+        <button class="btn btn-success" style="width: 100%; margin-top: 16px; font-size: 14px;" onclick="switchScreen('add-property')">Add New Property</button>
     </div>
 </div>
 
-<!-- SCREEN 3: ADD PROPERTY -->
 <div class="screen" id="add-property">
     <div class="status-bar">
         <span>9:41</span>
@@ -759,226 +1363,184 @@
             <p>New Investment</p>
         </div>
         <div class="header-icon">🏢</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
+        <button class="menu-btn">☰</button>
     </div>
     
     <div class="content">
-        <div class="tab-container">
-            <button class="tab active" data-tab="basic-info">Basic Info</button>
-            <button class="tab" data-tab="property-details">Details</button>
-            <button class="tab" data-tab="financials">Financials</button>
-            <button class="tab" data-tab="contacts">Contacts</button>
+        <h2 class="section-title">Basic Information</h2>
+        
+        <div class="form-group">
+            <label>Property Name *</label>
+            <input type="text" class="input-field" id="propertyName" placeholder="Enter property name">
         </div>
         
-        <!-- BASIC INFO TAB -->
-        <div class="tab-content active" id="basic-info">
-            <h2 class="section-title">Basic Information</h2>
-            
-            <div class="form-group">
-                <label>Property Name *</label>
-                <input type="text" class="input-field" placeholder="Enter property name">
-            </div>
-            
-            <div class="form-group">
-                <label>Address *</label>
-                <input type="text" class="input-field" placeholder="Street address">
-            </div>
-            
-            <div class="form-row">
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>City *</label>
-                        <input type="text" class="input-field" placeholder="City">
-                    </div>
-                </div>
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>State *</label>
-                        <input type="text" class="input-field" placeholder="State">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label>Zip Code *</label>
-                <input type="text" class="input-field" placeholder="Zip code">
-            </div>
-            
-            <div class="form-group">
-                <label>Property Description</label>
-                <textarea class="input-field" placeholder="Property details" rows="3"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label>Property Image URL</label>
-                <input type="text" class="input-field" placeholder="Image URL">
-            </div>
+        <div class="form-group">
+            <label>Address *</label>
+            <input type="text" class="input-field" id="address" placeholder="Street address">
         </div>
         
-        <!-- PROPERTY DETAILS TAB -->
-        <div class="tab-content" id="property-details">
-            <h2 class="section-title">Property Details</h2>
-            
-            <div class="form-row">
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Number of Units *</label>
-                        <input type="number" class="input-field" placeholder="Units">
-                    </div>
-                </div>
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Square Feet</label>
-                        <input type="number" class="input-field" placeholder="Square footage">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Purchase Price *</label>
-                        <input type="number" class="input-field" placeholder="Price">
-                    </div>
-                </div>
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Initial Market Value</label>
-                        <input type="number" class="input-field" placeholder="Market value">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label>Property Group</label>
-                <input type="text" class="input-field" placeholder="Property group">
-            </div>
-            
-            <div class="form-row">
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Depreciable Closing Costs</label>
-                        <input type="number" class="input-field" placeholder="Closing costs">
-                    </div>
-                </div>
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Other Closing Costs</label>
-                        <input type="number" class="input-field" placeholder="Other costs">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label>Notes</label>
-                <textarea class="input-field" placeholder="Additional notes" rows="3"></textarea>
-            </div>
+        <div class="form-group">
+            <label>City *</label>
+            <input type="text" class="input-field" id="city" placeholder="City">
         </div>
         
-        <!-- FINANCIALS TAB -->
-        <div class="tab-content" id="financials">
-            <h2 class="section-title">Financial Information</h2>
-            
-            <div class="form-row">
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Initial Cash Invested</label>
-                        <input type="number" class="input-field" placeholder="Amount">
-                    </div>
-                </div>
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Equity Share %</label>
-                        <input type="number" class="input-field" placeholder="Percentage" step="0.1">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Appreciation Rate (%)</label>
-                        <input type="number" class="input-field" placeholder="Rate" step="0.1">
-                    </div>
-                </div>
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Income Inflation (%)</label>
-                        <input type="number" class="input-field" placeholder="Rate" step="0.1">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Expense Inflation (%)</label>
-                        <input type="number" class="input-field" placeholder="Rate" step="0.1">
-                    </div>
-                </div>
-                <div class="form-col">
-                    <div class="form-group">
-                        <label>Vacancy Rate (%)</label>
-                        <input type="number" class="input-field" placeholder="Rate" step="0.1">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label>Maintenance Percentage (%)</label>
-                <input type="number" class="input-field" placeholder="Percentage" step="0.1">
-            </div>
-            
-            <div class="form-group">
-                <label>GO Zone Property</label>
-                <select class="input-field">
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
-                </select>
-            </div>
+        <div class="form-group">
+            <label>State *</label>
+            <input type="text" class="input-field" id="state" placeholder="State">
         </div>
         
-        <!-- CONTACTS TAB -->
-        <div class="tab-content" id="contacts">
-            <h2 class="section-title">Contact Information</h2>
-            
-            <div class="form-group">
-                <label>Contact Person Name</label>
-                <input type="text" class="input-field" placeholder="Full name">
-            </div>
-            
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" class="input-field" placeholder="Email address">
-            </div>
-            
-            <div class="form-group">
-                <label>Phone Number</label>
-                <input type="tel" class="input-field" placeholder="Phone number">
-            </div>
-            
+        <div class="form-group">
+            <label>Zip Code *</label>
+            <input type="text" class="input-field" id="zipCode" placeholder="Zip code">
+        </div>
         
-            
-            <div class="form-group">
-                <label>Website URL</label>
-                <input type="url" class="input-field" placeholder="https://example.com">
-            </div>
-            
-                    
-            <div class="form-group">
-                <label>Lender Contact</label>
-                <input type="text" class="input-field" placeholder="Lender name">
-            </div>
-            
-            <div class="form-group">
-                <label>Lender Phone</label>
-                <input type="tel" class="input-field" placeholder="Lender phone">
-            </div>
-            
-            <div class="form-group">
-                <label>Notes</label>
-                <textarea class="input-field" placeholder="Additional contact notes" rows="3"></textarea>
-            </div>
+        <div class="form-group">
+            <label>Property Description</label>
+            <input type="text" class="input-field" id="propertyDescription" placeholder="e.g., 3BR, 2BA, Built in 2007">
+        </div>
+        
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" class="input-field" id="email" placeholder="Property contact email">
+        </div>
+        
+        <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" class="input-field" id="phoneNumber" placeholder="Contact phone">
+        </div>
+        
+        <div class="form-group">
+            <label>Website URL</label>
+            <input type="url" class="input-field" id="websiteUrl" placeholder="Property website">
+        </div>
+        
+        <div class="form-group">
+            <label>Property Image URL</label>
+            <input type="url" class="input-field" id="propertyImage" placeholder="Image URL">
+        </div>
+        
+        <h2 class="section-title">Property Details</h2>
+        
+        <div class="form-group">
+            <label>Number of Units *</label>
+            <input type="number" class="input-field" id="units" placeholder="Total units">
+        </div>
+        
+        <div class="form-group">
+            <label>Square Feet</label>
+            <input type="number" class="input-field" id="squareFeet" placeholder="Total square footage">
+        </div>
+        
+        <div class="form-group">
+            <label>Purchase Price *</label>
+            <input type="number" class="input-field" id="purchasePrice" placeholder="Purchase price">
+        </div>
+        
+        <div class="form-group">
+            <label>Initial Market Value</label>
+            <input type="number" class="input-field" id="initialMarketValue" placeholder="Market value">
+        </div>
+        
+        <div class="form-group">
+            <label>Initial Cash Invested *</label>
+            <input type="number" class="input-field" id="initialCash" placeholder="Initial cash amount">
+        </div>
+        
+        <div class="form-group">
+            <label>Depreciable Closing Costs</label>
+            <input type="number" class="input-field" id="depreciableClosingCosts" placeholder="Closing costs">
+        </div>
+        
+        <div class="form-group">
+            <label>Other Closing Costs</label>
+            <input type="number" class="input-field" id="otherClosingCosts" placeholder="Other costs">
+        </div>
+        
+        <div class="form-group">
+            <label>Equity Share Percentage (%)</label>
+            <input type="number" class="input-field" id="equitySharePercentage" placeholder="Equity %" step="0.1" value="100">
+        </div>
+        
+        <div class="form-group">
+            <label>Cost Per Unit</label>
+            <input type="number" class="input-field" id="costPerUnit" placeholder="Cost per unit">
+        </div>
+        
+        <div class="form-group">
+            <label>Average Monthly Rent Per Unit</label>
+            <input type="number" class="input-field" id="averageMonthlyRentPerUnit" placeholder="Avg rent">
+        </div>
+        
+        <h2 class="section-title">Rates & Ratios</h2>
+        
+        <div class="form-group">
+            <label>Appreciation Rate (%)</label>
+            <input type="number" class="input-field" id="appreciationRate" placeholder="Annual appreciation %" step="0.1" value="1.0">
+        </div>
+        
+        <div class="form-group">
+            <label>Income Inflation Rate (%)</label>
+            <input type="number" class="input-field" id="incomeInflation" placeholder="Income growth %" step="0.1" value="1.5">
+        </div>
+        
+        <div class="form-group">
+            <label>Expense Inflation Rate (%)</label>
+            <input type="number" class="input-field" id="expenseInflation" placeholder="Expense growth %" step="0.1" value="2.0">
+        </div>
+        
+        <div class="form-group">
+            <label>Vacancy Rate (%)</label>
+            <input type="number" class="input-field" id="vacancyRate" placeholder="Vacancy %" step="0.1" value="0">
+        </div>
+        
+        <div class="form-group">
+            <label>Maintenance Percentage (%)</label>
+            <input type="number" class="input-field" id="maintenancePercentage" placeholder="Maintenance %" step="0.1" value="4.0">
+        </div>
+        
+        <div class="form-group">
+            <label>Annual Gross Rent Multiplier</label>
+            <input type="number" class="input-field" id="annualGrossRentMultiplier" placeholder="AGRM" step="0.1">
+        </div>
+        
+        <div class="form-group">
+            <label>Operating Expense Ratio (%)</label>
+            <input type="number" class="input-field" id="operatingExpenseRatio" placeholder="OER %" step="0.1">
+        </div>
+        
+        <div class="form-group">
+            <label>Debt Coverage Ratio</label>
+            <input type="number" class="input-field" id="debtCoverageRatio" placeholder="DCR" step="0.01">
+        </div>
+        
+        <div class="form-group">
+            <label>LTV For Refinance (%)</label>
+            <input type="number" class="input-field" id="ltvForRefinance" placeholder="LTV %" step="0.1" value="80.0">
+        </div>
+        
+        <div class="form-group">
+            <label>Selling Costs</label>
+            <input type="number" class="input-field" id="sellingCosts" placeholder="Selling costs" value="0">
+        </div>
+        
+        <h2 class="section-title">Additional Settings</h2>
+        
+        <div class="form-group">
+            <label>Property Group</label>
+            <input type="text" class="input-field" id="propertyGroup" placeholder="Group name" value="ALL GROUPS">
+        </div>
+        
+        <div class="form-group">
+            <label>GO Zone Property</label>
+            <select class="input-field" id="isGoZone">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Notes</label>
+            <textarea class="input-field" id="notes" placeholder="Additional notes" rows="3"></textarea>
         </div>
         
         <div class="button-group">
@@ -988,7 +1550,6 @@
     </div>
 </div>
 
-<!-- SCREEN 4: LOAN MANAGEMENT -->
 <div class="screen" id="loan-management">
     <div class="status-bar">
         <span>9:41</span>
@@ -1001,7 +1562,7 @@
             <p>Mortgage Info</p>
         </div>
         <div class="header-icon">💳</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
+        <button class="menu-btn">☰</button>
     </div>
     
     <div class="content">
@@ -1013,71 +1574,153 @@
         
         <div class="form-group">
             <label>Lender Name *</label>
-            <input type="text" class="input-field" value="Wells Fargo">
+            <input type="text" class="input-field" id="lender" value="Wells Fargo">
+        </div>
+        
+        <div class="form-group">
+            <label>Loan Number</label>
+            <input type="text" class="input-field" id="loanNumber" placeholder="Account number">
         </div>
         
         <div class="form-group">
             <label>Loan Amount ($) *</label>
-            <input type="number" class="input-field" value="3187500">
+            <input type="number" class="input-field" id="loanAmount" value="3187500">
         </div>
         
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label>Interest Rate (%) *</label>
-                    <input type="number" class="input-field" value="4.5" step="0.1">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label>Loan Term (Years) *</label>
-                    <input type="number" class="input-field" value="25">
-                </div>
-            </div>
+        <div class="form-group">
+            <label>Loan Amount Type</label>
+            <select class="input-field" id="loanAmountType">
+                <option value="FIXED">Fixed Amount</option>
+                <option value="PERCENTAGE">Percentage</option>
+            </select>
         </div>
         
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label>Loan Type</label>
-                    <select class="input-field">
-                        <option>Amortizing</option>
-                        <option>Interest-Only</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label>Mortgage Number</label>
-                    <select class="input-field">
-                        <option>First</option>
-                        <option>Second</option>
-                    </select>
-                </div>
-            </div>
+        <div class="form-group">
+            <label>Loan Percentage (%)</label>
+            <input type="number" class="input-field" id="loanPercentage" placeholder="% of purchase price" step="0.1">
         </div>
         
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label>Loan to Cost Ratio (%)</label>
-                    <input type="number" class="input-field" value="67.11" step="0.1">
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label>Loan to Value Ratio (%)</label>
-                    <input type="number" class="input-field" value="67.11" step="0.1">
-                </div>
-            </div>
+        <div class="form-group">
+            <label>Interest Rate (%) *</label>
+            <input type="number" class="input-field" id="interestRate" value="4.5" step="0.1">
+        </div>
+        
+        <div class="form-group">
+            <label>Loan Term (Years) *</label>
+            <input type="number" class="input-field" id="loanTermYears" value="25">
+        </div>
+        
+        <div class="form-group">
+            <label>Loan Type</label>
+            <select class="input-field" id="loanType">
+                <option value="Amortizing">Amortizing Fixed-Rate</option>
+                <option value="Interest-only">Interest Only</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Mortgage Number</label>
+            <select class="input-field" id="mortgageNumber">
+                <option value="First">First Mortgage</option>
+                <option value="Second">Second Mortgage</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Loan Origination Date</label>
+            <input type="date" class="input-field" id="originationDate">
+        </div>
+        
+        <div class="form-group">
+            <label>Down Payment ($)</label>
+            <input type="number" class="input-field" id="downPayment" placeholder="Down payment amount">
+        </div>
+        
+        <div class="form-group">
+            <label>Loan Origination Fees ($)</label>
+            <input type="number" class="input-field" id="loanOriginationFees" placeholder="Closing fees">
+        </div>
+        
+        <div class="form-group">
+            <label>Monthly PMI ($)</label>
+            <input type="number" class="input-field" id="monthlyPMI" placeholder="PMI payment" value="0">
+        </div>
+        
+        <div class="form-group">
+            <label>Addon Rate (%)</label>
+            <input type="number" class="input-field" id="addonRate" placeholder="Additional rate/points" step="0.1" value="0">
         </div>
         
         <div class="form-group">
             <label>Payment Frequency</label>
-            <select class="input-field">
-                <option>Monthly</option>
-                <option>Quarterly</option>
+            <select class="input-field" id="paymentFrequency">
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Annually">Annually</option>
             </select>
+        </div>
+        
+        <h2 class="section-title">Additional Costs</h2>
+        
+        <div class="form-group">
+            <label>Property Tax (Annual) ($)</label>
+            <input type="number" class="input-field" id="propertyTaxAnnual" placeholder="Annual property tax">
+        </div>
+        
+        <div class="form-group">
+            <label>Home Insurance (Annual) ($)</label>
+            <input type="number" class="input-field" id="homeInsuranceAnnual" placeholder="Annual insurance">
+        </div>
+        
+        <div class="form-group">
+            <label>HOA Fee (Monthly) ($)</label>
+            <input type="number" class="input-field" id="hoaFeeMonthly" placeholder="Monthly HOA fee">
+        </div>
+        
+        <div class="form-group">
+            <label>Other Costs (Annual) ($)</label>
+            <input type="number" class="input-field" id="otherCostsAnnual" placeholder="Other annual costs">
+        </div>
+        
+        <h2 class="section-title">Escrow Settings</h2>
+        
+        <div class="form-group">
+            <label>PMI Paid from Escrow</label>
+            <select class="input-field" id="escrowPMI">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Insurance Paid from Escrow</label>
+            <select class="input-field" id="escrowInsurance">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Taxes Paid from Escrow</label>
+            <select class="input-field" id="escrowTaxes">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+            </select>
+        </div>
+        
+        <h2 class="section-title">Early Payoff</h2>
+        
+        <div class="form-group">
+            <label>Paid Off Early</label>
+            <select class="input-field" id="paidOffEarly">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Paid Off Date</label>
+            <input type="date" class="input-field" id="paidOffDate">
         </div>
         
         <h2 class="section-title">Calculated Results</h2>
@@ -1085,6 +1728,16 @@
         <div class="card">
             <div class="card-label">Monthly Payment</div>
             <div class="card-value">$17,717</div>
+        </div>
+        
+        <div class="card">
+            <div class="card-label">Loan to Cost Ratio (LTC)</div>
+            <div class="card-value">67.11%</div>
+        </div>
+        
+        <div class="card">
+            <div class="card-label">Loan to Value Ratio (LTV)</div>
+            <div class="card-value">67.11%</div>
         </div>
         
         <div class="card">
@@ -1097,6 +1750,11 @@
             <div class="card-value">$5.3M</div>
         </div>
         
+        <div class="card">
+            <div class="card-label">Payoff Date</div>
+            <div class="card-value">Oct 2055</div>
+        </div>
+        
         <div class="button-group">
             <button class="btn btn-secondary">Cancel</button>
             <button class="btn btn-success">Save Loan</button>
@@ -1104,7 +1762,6 @@
     </div>
 </div>
 
-<!-- SCREEN 5: MORTGAGE CALCULATOR -->
 <div class="screen" id="mortgage-calculator">
     <div class="status-bar">
         <span>9:41</span>
@@ -1117,67 +1774,51 @@
             <p>Payment Estimation</p>
         </div>
         <div class="header-icon">🧮</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
+        <button class="menu-btn">☰</button>
     </div>
     
     <div class="content">
+        <h2 class="section-title">Input Details</h2>
+        
         <div class="form-group">
-            <label>Property Price ($)</label>
-            <input type="number" class="input-field" placeholder="Enter property price" value="4750000">
+            <label>Home Price ($)</label>
+            <input type="number" class="input-field" value="400000">
         </div>
         
         <div class="form-group">
             <label>Down Payment ($)</label>
-            <input type="number" class="input-field" placeholder="Enter down payment" value="1562500">
-        </div>
-        
-        <div class="form-group">
-            <label>Loan Term (Years)</label>
-            <input type="number" class="input-field" placeholder="Enter loan term" value="25">
+            <input type="number" class="input-field" value="40000">
         </div>
         
         <div class="form-group">
             <label>Interest Rate (%)</label>
-            <input type="number" class="input-field" placeholder="Enter interest rate" value="4.5" step="0.1">
+            <input type="number" class="input-field" value="6.5" step="0.1">
         </div>
         
         <div class="form-group">
-            <label>Annual Property Tax ($)</label>
-            <input type="number" class="input-field" placeholder="Enter property tax" value="47500">
+            <label>Loan Term (Years)</label>
+            <input type="number" class="input-field" value="30">
         </div>
         
-        <div class="form-group">
-            <label>Annual Insurance ($)</label>
-            <input type="number" class="input-field" placeholder="Enter insurance" value="23750">
-        </div>
-        
-        <div class="form-group">
-            <label>PMI (%)</label>
-            <input type="number" class="input-field" placeholder="Enter PMI percentage" value="0.5" step="0.1">
-        </div>
-        
-        <div class="form-group">
-            <label>HOA Fees ($/month)</label>
-            <input type="number" class="input-field" placeholder="Enter HOA fees" value="0">
-        </div>
+        <button class="btn btn-primary" style="width: 100%;">Calculate</button>
         
         <div class="result-box">
-            <p>Estimated Monthly Payment</p>
-            <h2>$17,717</h2>
+            <p>Monthly Payment</p>
+            <h2>$2,275.34</h2>
         </div>
         
-        <div class="chart-placeholder">
-            Mortgage Payment Breakdown Chart
+        <div class="card">
+            <div class="card-label">Total Interest Paid</div>
+            <div class="card-value">$419,122</div>
         </div>
         
-        <div class="button-group">
-            <button class="btn btn-secondary">Reset</button>
-            <button class="btn btn-success">Calculate</button>
+        <div class="card">
+            <div class="card-label">Total Payment</div>
+            <div class="card-value">$819,122</div>
         </div>
     </div>
 </div>
 
-<!-- SCREEN 6: ROI CALCULATOR -->
 <div class="screen" id="roi-calculator">
     <div class="status-bar">
         <span>9:41</span>
@@ -1190,595 +1831,50 @@
             <p>Return on Investment</p>
         </div>
         <div class="header-icon">📈</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
+        <button class="menu-btn">☰</button>
     </div>
     
     <div class="content">
+        <h2 class="section-title">Investment Details</h2>
+        
         <div class="form-group">
-            <label>Property Price ($)</label>
-            <input type="number" class="input-field" placeholder="Enter property price" value="4750000">
+            <label>Amount Invested ($)</label>
+            <input type="number" class="input-field" value="10000">
         </div>
         
         <div class="form-group">
-            <label>Down Payment ($)</label>
-            <input type="number" class="input-field" placeholder="Enter down payment" value="1562500">
+            <label>Amount Returned ($)</label>
+            <input type="number" class="input-field" value="15000">
         </div>
         
         <div class="form-group">
-            <label>Closing Costs ($)</label>
-            <input type="number" class="input-field" placeholder="Enter closing costs" value="95000">
+            <label>Investment Length (Years)</label>
+            <input type="number" class="input-field" value="3">
         </div>
         
-        <div class="form-group">
-            <label>Renovation Costs ($)</label>
-            <input type="number" class="input-field" placeholder="Enter renovation costs" value="0">
-        </div>
-        
-        <div class="form-group">
-            <label>Monthly Rental Income ($)</label>
-            <input type="number" class="input-field" placeholder="Enter rental income" value="40000">
-        </div>
-        
-        <div class="form-group">
-            <label>Monthly Expenses ($)</label>
-            <input type="number" class="input-field" placeholder="Enter monthly expenses" value="22300">
-        </div>
-        
-        <div class="form-group">
-            <label>Annual Appreciation (%)</label>
-            <input type="number" class="input-field" placeholder="Enter appreciation rate" value="3" step="0.1">
-        </div>
-        
-        <div class="form-group">
-            <label>Holding Period (Years)</label>
-            <input type="number" class="input-field" placeholder="Enter holding period" value="5">
-        </div>
+        <button class="btn btn-primary" style="width: 100%;">Calculate ROI</button>
         
         <div class="result-box">
-            <p>Estimated ROI</p>
-            <h2>15.2%</h2>
-        </div>
-        
-        <div class="chart-placeholder">
-            ROI Breakdown Chart
-        </div>
-        
-        <div class="button-group">
-            <button class="btn btn-secondary">Reset</button>
-            <button class="btn btn-success">Calculate</button>
-        </div>
-    </div>
-</div>
-
-<!-- SCREEN 7: EXPENSES -->
-<div class="screen" id="expenses">
-    <div class="status-bar">
-        <span>9:41</span>
-        <span>📶 📡 🔋</span>
-    </div>
-    
-    <div class="header">
-        <div class="header-left">
-            <h1>Expenses</h1>
-            <p>Property Costs</p>
-        </div>
-        <div class="header-icon">💸</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
-    </div>
-    
-    <div class="content">
-        <div class="info-box">
-            Property: Comfort Suites Conway
-        </div>
-        
-        <h2 class="section-title">Monthly Expenses</h2>
-        
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Category</th>
-                    <th>Amount</th>
-                    <th>Frequency</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Mortgage</td>
-                    <td>$17,717</td>
-                    <td>Monthly</td>
-                </tr>
-                <tr>
-                    <td>Property Tax</td>
-                    <td>$3,958</td>
-                    <td>Monthly</td>
-                </tr>
-                <tr>
-                    <td>Insurance</td>
-                    <td>$1,979</td>
-                    <td>Monthly</td>
-                </tr>
-                <tr>
-                    <td>Maintenance</td>
-                    <td>$2,000</td>
-                    <td>Monthly</td>
-                </tr>
-                <tr>
-                    <td>Utilities</td>
-                    <td>$1,500</td>
-                    <td>Monthly</td>
-                </tr>
-                <tr>
-                    <td>Management Fee</td>
-                    <td>$2,000</td>
-                    <td>Monthly</td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2 class="section-title">Add New Expense</h2>
-        
-        <div class="form-group">
-            <label>Category</label>
-            <select class="input-field">
-                <option>Maintenance</option>
-                <option>Repairs</option>
-                <option>Utilities</option>
-                <option>Insurance</option>
-                <option>Property Tax</option>
-                <option>Management Fee</option>
-                <option>Other</option>
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label>Amount ($)</label>
-            <input type="number" class="input-field" placeholder="Enter amount">
-        </div>
-        
-        <div class="form-group">
-            <label>Date</label>
-            <input type="date" class="input-field">
-        </div>
-        
-        <div class="form-group">
-            <label>Description</label>
-            <textarea class="input-field" placeholder="Enter description" rows="2"></textarea>
-        </div>
-        
-        <div class="button-group">
-            <button class="btn btn-secondary">Cancel</button>
-            <button class="btn btn-success">Add Expense</button>
-        </div>
-    </div>
-</div>
-
-<!-- SCREEN 8: INCOME -->
-<div class="screen" id="income">
-    <div class="status-bar">
-        <span>9:41</span>
-        <span>📶 📡 🔋</span>
-    </div>
-    
-    <div class="header">
-        <div class="header-left">
-            <h1>Income</h1>
-            <p>Rental Revenue</p>
-        </div>
-        <div class="header-icon">💵</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
-    </div>
-    
-    <div class="content">
-        <div class="info-box">
-            Property: Comfort Suites Conway
-        </div>
-        
-        <h2 class="section-title">Monthly Income</h2>
-        
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Category</th>
-                    <th>Amount</th>
-                    <th>Frequency</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Room Rentals</td>
-                    <td>$35,000</td>
-                    <td>Monthly</td>
-                </tr>
-                <tr>
-                    <td>Additional Services</td>
-                    <td>$5,000</td>
-                    <td>Monthly</td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <h2 class="section-title">Add New Income</h2>
-        
-        <div class="form-group">
-            <label>Category</label>
-            <select class="input-field">
-                <option>Rent</option>
-                <option>Laundry</option>
-                <option>Parking</option>
-                <option>Storage</option>
-                <option>Pet Fees</option>
-                <option>Other</option>
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label>Amount ($)</label>
-            <input type="number" class="input-field" placeholder="Enter amount">
-        </div>
-        
-        <div class="form-group">
-            <label>Date</label>
-            <input type="date" class="input-field">
-        </div>
-        
-        <div class="form-group">
-            <label>Description</label>
-            <textarea class="input-field" placeholder="Enter description" rows="2"></textarea>
-        </div>
-        
-        <div class="button-group">
-            <button class="btn btn-secondary">Cancel</button>
-            <button class="btn btn-success">Add Income</button>
-        </div>
-    </div>
-</div>
-
-<!-- SCREEN 9: RENT ROLL -->
-<div class="screen" id="rent-roll">
-    <div class="status-bar">
-        <span>9:41</span>
-        <span>📶 📡 🔋</span>
-    </div>
-    
-    <div class="header">
-        <div class="header-left">
-            <h1>Rent Roll</h1>
-            <p>Unit Occupancy</p>
-        </div>
-        <div class="header-icon">🏘️</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
-    </div>
-    
-    <div class="content">
-        <div class="info-box">
-            Property: Comfort Suites Conway - 70 Units
-        </div>
-        
-        <h2 class="section-title">Unit Status</h2>
-        
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Occupied</h3>
-                <div class="value">62</div>
-            </div>
-            <div class="stat-card">
-                <h3>Vacant</h3>
-                <div class="value">8</div>
-            </div>
-            <div class="stat-card">
-                <h3>Occupancy Rate</h3>
-                <div class="value">88.6%</div>
-            </div>
-            <div class="stat-card">
-                <h3>Avg Rent</h3>
-                <div class="value">$500</div>
-            </div>
-        </div>
-        
-        <h2 class="section-title">Unit Details</h2>
-        
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Unit #</th>
-                    <th>Type</th>
-                    <th>Rent</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>101</td>
-                    <td>Standard</td>
-                    <td>$500</td>
-                    <td><span class="status-badge badge-active">Occupied</span></td>
-                </tr>
-                <tr>
-                    <td>102</td>
-                    <td>Standard</td>
-                    <td>$500</td>
-                    <td><span class="status-badge badge-active">Occupied</span></td>
-                </tr>
-                <tr>
-                    <td>103</td>
-                    <td>Deluxe</td>
-                    <td>$600</td>
-                    <td><span class="status-badge badge-pending">Vacant</span></td>
-                </tr>
-                <tr>
-                    <td>104</td>
-                    <td>Standard</td>
-                    <td>$500</td>
-                    <td><span class="status-badge badge-active">Occupied</span></td>
-                </tr>
-                <tr>
-                    <td>105</td>
-                    <td>Standard</td>
-                    <td>$500</td>
-                    <td><span class="status-badge badge-scheduled">Leased</span></td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <div class="button-group">
-            <button class="btn btn-secondary">Export</button>
-            <button class="btn btn-success">Add Unit</button>
-        </div>
-    </div>
-</div>
-
-<!-- SCREEN 10: ANALYTICS -->
-<div class="screen" id="analytics">
-    <div class="status-bar">
-        <span>9:41</span>
-        <span>📶 📡 🔋</span>
-    </div>
-    
-    <div class="header">
-        <div class="header-left">
-            <h1>Analytics</h1>
-            <p>Portfolio Performance</p>
-        </div>
-        <div class="header-icon">📊</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
-    </div>
-    
-    <div class="content">
-        <h2 class="section-title">Portfolio Overview</h2>
-        
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Cap Rate</h3>
-                <div class="value">7.9%</div>
-            </div>
-            <div class="stat-card">
-                <h3>Cash on Cash</h3>
-                <div class="value">15.2%</div>
-            </div>
-            <div class="stat-card">
-                <h3>NOI</h3>
-                <div class="value">$685K</div>
-            </div>
-            <div class="stat-card">
-                <h3>DSCR</h3>
-                <div class="value">1.25</div>
-            </div>
-        </div>
-        
-        <h2 class="section-title">Performance Metrics</h2>
-        
-        <div class="chart-placeholder">
-            Portfolio Value Over Time Chart
-        </div>
-        
-        <div class="chart-placeholder">
-            Cash Flow Analysis Chart
-        </div>
-        
-        <div class="chart-placeholder">
-            Expense Breakdown Chart
-        </div>
-        
-        <div class="chart-placeholder">
-            ROI Comparison Chart
-        </div>
-    </div>
-</div>
-
-<!-- SCREEN 11: CASH FLOW -->
-<div class="screen" id="cash-flow">
-    <div class="status-bar">
-        <span>9:41</span>
-        <span>📶 📡 🔋</span>
-    </div>
-    
-    <div class="header">
-        <div class="header-left">
-            <h1>Cash Flow</h1>
-            <p>Income vs Expenses</p>
-        </div>
-        <div class="header-icon">💰</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
-    </div>
-    
-    <div class="content">
-        <div class="info-box">
-            Property: Comfort Suites Conway
-        </div>
-        
-        <h2 class="section-title">Monthly Cash Flow</h2>
-        
-        <div class="card">
-            <div class="card-label">Total Income</div>
-            <div class="card-value">$40,000</div>
+            <p>Total ROI</p>
+            <h2>50.0%</h2>
         </div>
         
         <div class="card">
-            <div class="card-label">Total Expenses</div>
-            <div class="card-value">$27,300</div>
+            <div class="card-label">Annualized ROI</div>
+            <div class="card-value">14.5%</div>
         </div>
         
         <div class="card">
-            <div class="card-label">Net Cash Flow</div>
-            <div class="card-value">$12,700</div>
-        </div>
-        
-        <h2 class="section-title">Cash Flow History</h2>
-        
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Month</th>
-                    <th>Income</th>
-                    <th>Expenses</th>
-                    <th>Cash Flow</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Jan 2023</td>
-                    <td>$40,000</td>
-                    <td>$27,300</td>
-                    <td style="color: #10b981;">$12,700</td>
-                </tr>
-                <tr>
-                    <td>Dec 2022</td>
-                    <td>$39,500</td>
-                    <td>$26,800</td>
-                    <td style="color: #10b981;">$12,700</td>
-                </tr>
-                <tr>
-                    <td>Nov 2022</td>
-                    <td>$38,700</td>
-                    <td>$27,100</td>
-                    <td style="color: #10b981;">$11,600</td>
-                </tr>
-                <tr>
-                    <td>Oct 2022</td>
-                    <td>$39,200</td>
-                    <td>$26,500</td>
-                    <td style="color: #10b981;">$12,700</td>
-                </tr>
-                <tr>
-                    <td>Sep 2022</td>
-                    <td>$38,900</td>
-                    <td>$27,400</td>
-                    <td style="color: #10b981;">$11,500</td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <div class="chart-placeholder">
-            Cash Flow Trend Chart
+            <div class="card-label">Net Profit</div>
+            <div class="card-value">$5,000</div>
         </div>
     </div>
 </div>
 
-<!-- SCREEN 12: ALERTS -->
-<div class="screen" id="alerts">
-    <div class="status-bar">
-        <span>9:41</span>
-        <span>📶 📡 🔋</span>
-    </div>
-    
-    <div class="header">
-        <div class="header-left">
-            <h1>Notifications</h1>
-            <p>Alerts & Reminders</p>
-        </div>
-        <div class="header-icon">🔔</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
-    </div>
-    
-    <div class="content">
-        <div class="property-card">
-            <h3>Mortgage Payment Due</h3>
-            <div class="property-info">
-                <label>Property:</label>
-                <value>Comfort Suites Conway</value>
-            </div>
-            <div class="property-info">
-                <label>Amount:</label>
-                <value>$17,717</value>
-            </div>
-            <div class="property-info">
-                <label>Due Date:</label>
-                <value>June 1, 2023</value>
-            </div>
-            <div class="property-info">
-                <label>Status:</label>
-                <value><span class="status-badge badge-pending">Pending</span></value>
-            </div>
-        </div>
-        
-        <div class="property-card">
-            <h3>Property Tax Due</h3>
-            <div class="property-info">
-                <label>Property:</label>
-                <value>Montgomery, AL</value>
-            </div>
-            <div class="property-info">
-                <label>Amount:</label>
-                <value>$1,250</value>
-            </div>
-            <div class="property-info">
-                <label>Due Date:</label>
-                <value>June 15, 2023</value>
-            </div>
-            <div class="property-info">
-                <label>Status:</label>
-                <value><span class="status-badge badge-pending">Pending</span></value>
-            </div>
-        </div>
-        
-        <div class="property-card">
-            <h3>Insurance Renewal</h3>
-            <div class="property-info">
-                <label>Property:</label>
-                <value>Comfort Suites Conway</value>
-            </div>
-            <div class="property-info">
-                <label>Amount:</label>
-                <value>$23,750</value>
-            </div>
-            <div class="property-info">
-                <label>Due Date:</label>
-                <value>July 1, 2023</value>
-            </div>
-            <div class="property-info">
-                <label>Status:</label>
-                <value><span class="status-badge badge-scheduled">Scheduled</span></value>
-            </div>
-        </div>
-        
-        <div class="property-card">
-            <h3>Maintenance Request</h3>
-            <div class="property-info">
-                <label>Property:</label>
-                <value>Montgomery, AL</value>
-            </div>
-            <div class="property-info">
-                <label>Issue:</label>
-                <value>HVAC Repair</value>
-            </div>
-            <div class="property-info">
-                <label>Reported:</label>
-                <value>May 20, 2023</value>
-            </div>
-            <div class="property-info">
-                <label>Status:</label>
-                <value><span class="status-badge badge-active">In Progress</span></value>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<!-- SCREEN 7: FUTURE VALUE CALCULATOR -->
 <div class="screen" id="future-value-calculator">
     <div class="status-bar">
         <span>9:41</span>
-        <span>Signal Wifi Battery</span>
+        <span>📶 📡 🔋</span>
     </div>
     
     <div class="header">
@@ -1832,11 +1928,10 @@
     </div>
 </div>
 
-<!-- SCREEN 8: PRESENT VALUE CALCULATOR -->
 <div class="screen" id="present-value-calculator">
     <div class="status-bar">
         <span>9:41</span>
-        <span>Signal Wifi Battery</span>
+        <span>📶 📡 🔋</span>
     </div>
     
     <div class="header">
@@ -1866,21 +1961,819 @@
             <input type="number" class="input-field" value="6" step="0.1">
         </div>
         
+        <div class="form-group">
+            <label>Periodic Deposit ($)</label>
+            <input type="number" class="input-field" value="100">
+        </div>
+        
+        <div class="form-group">
+            <label>Deposit At Beginning</label>
+            <select class="input-field">
+                <option value="false">End of Period</option>
+                <option value="true">Beginning of Period</option>
+            </select>
+        </div>
+        
         <button class="btn btn-primary" style="width: 100%;">Calculate</button>
         
         <div class="result-box">
             <p>Present Value</p>
-            <h2>$558.39</h2>
+            <h2>$736.01</h2>
         </div>
         
         <div class="card">
             <div class="card-label">Total Interest</div>
-            <div class="card-value">$441.61</div>
+            <div class="card-value">$318.08</div>
+        </div>
+        
+        <div class="card">
+            <div class="card-label">Future Value (Confirmed)</div>
+            <div class="card-value">$1,318.08</div>
         </div>
     </div>
 </div>
 
-<!-- SCREEN 13: SETTINGS -->
+<div class="screen" id="down-payment-calculator">
+    <div class="status-bar">
+        <span>9:41</span>
+        <span>📶 📡 🔋</span>
+    </div>
+    
+    <div class="header">
+        <div class="header-left">
+            <h1>Down Payment Calculator</h1>
+            <p>Affordability Analysis</p>
+        </div>
+        <div class="header-icon">🏦</div>
+        <button class="menu-btn">☰</button>
+    </div>
+    
+    <div class="content">
+        <h2 class="section-title">Calculation Mode</h2>
+        
+        <div class="form-group">
+            <label>Mode</label>
+            <select class="input-field" id="dpMode">
+                <option value="maxHomePrice">Max Home Price</option>
+                <option value="downPaymentFromPrice">Down Payment from Price</option>
+            </select>
+        </div>
+        
+        <h2 class="section-title">Input Details</h2>
+        
+        <div class="form-group">
+            <label>Upfront Cash Available ($)</label>
+            <input type="number" class="input-field" id="upfrontCashAvailable" value="100000">
+        </div>
+        
+        <div class="form-group">
+            <label>Down Payment Percentage (%)</label>
+            <input type="number" class="input-field" id="downPaymentPercent" value="20" step="0.1">
+        </div>
+        
+        <div class="form-group">
+            <label>Interest Rate (%)</label>
+            <input type="number" class="input-field" id="dpInterestRate" value="6.287" step="0.001">
+        </div>
+        
+        <div class="form-group">
+            <label>Loan Term (Years)</label>
+            <input type="number" class="input-field" id="dpLoanTermYears" value="30">
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%;">Calculate</button>
+        
+        <div class="result-box">
+            <p>Max Home Price</p>
+            <h2>$500,000</h2>
+        </div>
+        
+        <div class="card">
+            <div class="card-label">Down Payment Amount</div>
+            <div class="card-value">$100,000</div>
+        </div>
+        
+        <div class="card">
+            <div class="card-label">Monthly Payment (EMI)</div>
+            <div class="card-value">$2,400.00</div>
+        </div>
+        
+        <div class="card">
+            <div class="card-label">Loan Amount</div>
+            <div class="card-value">$400,000</div>
+        </div>
+    </div>
+</div>
+
+<div class="screen" id="expenses">
+    <div class="status-bar">
+        <span>9:41</span>
+        <span>📶 📡 🔋</span>
+    </div>
+    
+    <div class="header">
+        <div class="header-left">
+            <h1>Expenses</h1>
+            <p>Operating Costs</p>
+        </div>
+        <div class="header-icon">💸</div>
+        <button class="menu-btn">☰</button>
+    </div>
+    
+    <div class="content">
+        <h2 class="section-title">Expense Summary</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Monthly</h3>
+                <div class="value">$71.5K</div>
+            </div>
+            <div class="stat-card">
+                <h3>Annual</h3>
+                <div class="value">$858.5K</div>
+            </div>
+        </div>
+        
+        <h2 class="section-title">Expense Details</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Expense</th>
+                    <th>Monthly</th>
+                    <th>Annual</th>
+                    <th>%</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Insurance</td>
+                    <td>$2,500</td>
+                    <td>$30,000</td>
+                    <td>2%</td>
+                </tr>
+                <tr>
+                    <td>Maintenance</td>
+                    <td>$4,630</td>
+                    <td>$55,560</td>
+                    <td>4%</td>
+                </tr>
+                <tr>
+                    <td>Property Tax</td>
+                    <td>$3,333</td>
+                    <td>$39,996</td>
+                    <td>3%</td>
+                </tr>
+                <tr>
+                    <td>Utilities</td>
+                    <td>$6,430</td>
+                    <td>$77,160</td>
+                    <td>6%</td>
+                </tr>
+                <tr>
+                    <td>Salaries</td>
+                    <td>$21,605</td>
+                    <td>$259,260</td>
+                    <td>21%</td>
+                </tr>
+                <tr>
+                    <td>Management</td>
+                    <td>$4,115</td>
+                    <td>$49,380</td>
+                    <td>4%</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2 class="section-title">Add New Expense</h2>
+        
+        <div class="form-group">
+            <label>Expense Name *</label>
+            <input type="text" class="input-field" id="expenseName" placeholder="e.g., Insurance">
+        </div>
+        
+        <div class="form-group">
+            <label>Percentage of Income (%)</label>
+            <input type="number" class="input-field" id="percentageOfIncome" placeholder="% of income" step="0.1">
+        </div>
+        
+        <div class="form-group">
+            <label>Monthly Amount ($)</label>
+            <input type="number" class="input-field" id="monthlyExpenseAmount" placeholder="Monthly cost">
+        </div>
+        
+        <div class="form-group">
+            <label>Annual Amount ($)</label>
+            <input type="number" class="input-field" id="annualExpenseAmount" placeholder="Annual cost">
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%; margin-top: 16px;">Add Expense</button>
+    </div>
+</div>
+
+<div class="screen" id="income">
+    <div class="status-bar">
+        <span>9:41</span>
+        <span>📶 📡 🔋</span>
+    </div>
+    
+    <div class="header">
+        <div class="header-left">
+            <h1>Income</h1>
+            <p>Rental Revenue</p>
+        </div>
+        <div class="header-icon">💵</div>
+        <button class="menu-btn">☰</button>
+    </div>
+    
+    <div class="content">
+        <h2 class="section-title">Income Summary</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Operating Income (M)</h3>
+                <div class="value">$102.9K</div>
+            </div>
+            <div class="stat-card">
+                <h3>Operating Income (A)</h3>
+                <div class="value">$1.2M</div>
+            </div>
+        </div>
+        
+        <h2 class="section-title">Income Sources</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>Monthly</th>
+                    <th>Annual</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Gross Rent</td>
+                    <td>$100,970</td>
+                    <td>$1,211,646</td>
+                </tr>
+                <tr>
+                    <td>Vacancy Loss</td>
+                    <td>$0</td>
+                    <td>$0</td>
+                </tr>
+                <tr>
+                    <td>Meeting Room</td>
+                    <td>$420</td>
+                    <td>$5,037</td>
+                </tr>
+                <tr>
+                    <td>Convenience Store</td>
+                    <td>$1,391</td>
+                    <td>$16,689</td>
+                </tr>
+                <tr>
+                    <td>Miscellaneous</td>
+                    <td>$98</td>
+                    <td>$1,176</td>
+                </tr>
+                <tr style="font-weight: 600; background: #e8eaf6;">
+                    <td>Operating Income</td>
+                    <td>$102,879</td>
+                    <td>$1,234,548</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2 class="section-title">Add New Income</h2>
+        
+        <div class="form-group">
+            <label>Year</label>
+            <input type="number" class="input-field" id="incomeYear" placeholder="Financial year" value="1">
+        </div>
+        
+        <div class="form-group">
+            <label>Gross Rent (Monthly) ($)</label>
+            <input type="number" class="input-field" id="grossRentMonthly" placeholder="Monthly gross rent">
+        </div>
+        
+        <div class="form-group">
+            <label>Vacancy Loss ($)</label>
+            <input type="number" class="input-field" id="vacancyLoss" placeholder="Vacancy loss amount" value="0">
+        </div>
+        
+        <div class="form-group">
+            <label>Meeting Room Income ($)</label>
+            <input type="number" class="input-field" id="meetingRoom" placeholder="Meeting room income">
+        </div>
+        
+        <div class="form-group">
+            <label>Convenience Store Income ($)</label>
+            <input type="number" class="input-field" id="convenientStore" placeholder="Store income">
+        </div>
+        
+        <div class="form-group">
+            <label>Miscellaneous Income ($)</label>
+            <input type="number" class="input-field" id="miscellaneous" placeholder="Other income">
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%; margin-top: 16px;">Add Income</button>
+    </div>
+</div>
+
+<div class="screen" id="rent-roll">
+    <div class="status-bar">
+        <span>9:41</span>
+        <span>📶 📡 🔋</span>
+    </div>
+    
+    <div class="header">
+        <div class="header-left">
+            <h1>Rent Roll</h1>
+            <p>Units</p>
+        </div>
+        <div class="header-icon">🏘️</div>
+        <button class="menu-btn">☰</button>
+    </div>
+    
+    <div class="content">
+        <h2 class="section-title">Summary</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Units</h3>
+                <div class="value">70</div>
+            </div>
+            <div class="stat-card">
+                <h3>Avg Rent</h3>
+                <div class="value">$1,442</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-label">Monthly Rent</div>
+            <div class="card-value">$100.9K</div>
+        </div>
+        
+        <div class="card">
+            <div class="card-label">Annual Rent</div>
+            <div class="card-value">$1.2M</div>
+        </div>
+        
+        <h2 class="section-title">Unit Types</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Units</th>
+                    <th>Rent</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>ADA King</td>
+                    <td>3</td>
+                    <td>$1,442</td>
+                </tr>
+                <tr>
+                    <td>ADA Queen</td>
+                    <td>1</td>
+                    <td>$1,442</td>
+                </tr>
+                <tr>
+                    <td>Jacuzzi King</td>
+                    <td>2</td>
+                    <td>$1,650</td>
+                </tr>
+                <tr>
+                    <td>King</td>
+                    <td>29</td>
+                    <td>$1,442</td>
+                </tr>
+                <tr>
+                    <td>Queen</td>
+                    <td>35</td>
+                    <td>$1,442</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <button class="btn btn-primary" style="width: 100%; margin-top: 16px;">Add Unit</button>
+    </div>
+</div>
+
+<div class="screen" id="analytics">
+    <div class="status-bar">
+        <span>9:41</span>
+        <span>📶 📡 🔋</span>
+    </div>
+    
+    <div class="header">
+        <div class="header-left">
+            <h1>Analytics</h1>
+            <p>Performance</p>
+        </div>
+        <div class="header-icon">📊</div>
+        <button class="menu-btn">☰</button>
+    </div>
+    
+    <div class="content">
+        <h2 class="section-title">Cash Flow Analysis</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Year 1</th>
+                    <th>Year 5</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>NOI</td>
+                    <td>$375.9K</td>
+                    <td>$396.9K</td>
+                </tr>
+                <tr>
+                    <td>Cash Flow</td>
+                    <td>$39.0K</td>
+                    <td>$59.9K</td>
+                </tr>
+                <tr>
+                    <td>Cap Rate</td>
+                    <td>7.9%</td>
+                    <td>8.4%</td>
+                </tr>
+                <tr>
+                    <td>ROI</td>
+                    <td>5.4%</td>
+                    <td>8.4%</td>
+                </tr>
+                <tr>
+                    <td>IRR</td>
+                    <td>11.6%</td>
+                    <td>22.9%</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2 class="section-title">Equity Analysis</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Year 1</th>
+                    <th>Year 5</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Market Value</td>
+                    <td>$4.8M</td>
+                    <td>$5.0M</td>
+                </tr>
+                <tr>
+                    <td>Loan Balance</td>
+                    <td>$4.0M</td>
+                    <td>$3.4M</td>
+                </tr>
+                <tr>
+                    <td>Equity</td>
+                    <td>$761K</td>
+                    <td>$1.6M</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <button class="btn btn-primary" style="width: 100%; margin-top: 16px;">Export PDF</button>
+    </div>
+</div>
+
+<div class="screen" id="cash-flow">
+    <div class="status-bar">
+        <span>9:41</span>
+        <span>📶 📡 🔋</span>
+    </div>
+    
+    <div class="header">
+        <div class="header-left">
+            <h1>Cash Flow</h1>
+            <p>Projections</p>
+        </div>
+        <div class="header-icon">📊</div>
+        <button class="menu-btn">☰</button>
+    </div>
+    
+    <div class="content">
+        <h2 class="section-title">Year-by-Year Analysis</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>Income</th>
+                    <th>Expenses</th>
+                    <th>NOI</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Year 1</td>
+                    <td>$1,234.5K</td>
+                    <td>$858.6K</td>
+                    <td>$375.9K</td>
+                </tr>
+                <tr>
+                    <td>Year 2</td>
+                    <td>$1,253.0K</td>
+                    <td>$875.8K</td>
+                    <td>$381.1K</td>
+                </tr>
+                <tr>
+                    <td>Year 3</td>
+                    <td>$1,271.8K</td>
+                    <td>$893.3K</td>
+                    <td>$386.3K</td>
+                </tr>
+                <tr>
+                    <td>Year 5</td>
+                    <td>$1,310.2K</td>
+                    <td>$929.5K</td>
+                    <td>$396.9K</td>
+                </tr>
+                <tr>
+                    <td>Year 10</td>
+                    <td>$1,449.3K</td>
+                    <td>$1,051.7K</td>
+                    <td>$424.6K</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2 class="section-title">Cash Flow & Returns</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>Cash Flow</th>
+                    <th>Cap Rate</th>
+                    <th>ROI</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Year 1</td>
+                    <td>$39.0K</td>
+                    <td>7.9%</td>
+                    <td>5.4%</td>
+                </tr>
+                <tr>
+                    <td>Year 2</td>
+                    <td>$44.1K</td>
+                    <td>8.0%</td>
+                    <td>6.2%</td>
+                </tr>
+                <tr>
+                    <td>Year 3</td>
+                    <td>$49.3K</td>
+                    <td>8.1%</td>
+                    <td>6.9%</td>
+                </tr>
+                <tr>
+                    <td>Year 5</td>
+                    <td>$59.9K</td>
+                    <td>8.4%</td>
+                    <td>8.4%</td>
+                </tr>
+                <tr>
+                    <td>Year 10</td>
+                    <td>$87.7K</td>
+                    <td>9.0%</td>
+                    <td>12.2%</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2 class="section-title">Equity & Value Analysis</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>Market Value</th>
+                    <th>Loan Balance</th>
+                    <th>Equity</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Year 1</td>
+                    <td>$4,797.5K</td>
+                    <td>$4,035.9K</td>
+                    <td>$761.6K</td>
+                </tr>
+                <tr>
+                    <td>Year 3</td>
+                    <td>$4,893.3K</td>
+                    <td>$3,708.5K</td>
+                    <td>$1,184.7K</td>
+                </tr>
+                <tr>
+                    <td>Year 5</td>
+                    <td>$4,990.9K</td>
+                    <td>$3,353.2K</td>
+                    <td>$1,637.7K</td>
+                </tr>
+                <tr>
+                    <td>Year 10</td>
+                    <td>$5,237.7K</td>
+                    <td>$2,309.3K</td>
+                    <td>$2,928.4K</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2 class="section-title">Additional Metrics</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>LTV Ratio</th>
+                    <th>IRR</th>
+                    <th>ROE</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Year 1</td>
+                    <td>84.1%</td>
+                    <td>11.6%</td>
+                    <td>5.1%</td>
+                </tr>
+                <tr>
+                    <td>Year 3</td>
+                    <td>75.8%</td>
+                    <td>17.1%</td>
+                    <td>4.2%</td>
+                </tr>
+                <tr>
+                    <td>Year 5</td>
+                    <td>67.2%</td>
+                    <td>22.9%</td>
+                    <td>3.7%</td>
+                </tr>
+                <tr>
+                    <td>Year 10</td>
+                    <td>44.1%</td>
+                    <td>36.8%</td>
+                    <td>3.0%</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2 class="section-title">Refinancing & Sale Potential</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>Cash-Out Refi</th>
+                    <th>Sale Proceeds</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Year 1</td>
+                    <td>-$197.9K</td>
+                    <td>$761.6K</td>
+                </tr>
+                <tr>
+                    <td>Year 3</td>
+                    <td>$206.1K</td>
+                    <td>$1,184.7K</td>
+                </tr>
+                <tr>
+                    <td>Year 5</td>
+                    <td>$639.5K</td>
+                    <td>$1,637.7K</td>
+                </tr>
+                <tr>
+                    <td>Year 10</td>
+                    <td>$1,880.9K</td>
+                    <td>$2,928.4K</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2 class="section-title">Cumulative Performance</h2>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>Cumulative CF</th>
+                    <th>Net Profit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Year 1</td>
+                    <td>$39.0K</td>
+                    <td>$83.1K</td>
+                </tr>
+                <tr>
+                    <td>Year 3</td>
+                    <td>$132.5K</td>
+                    <td>$467.2K</td>
+                </tr>
+                <tr>
+                    <td>Year 5</td>
+                    <td>$241.6K</td>
+                    <td>$920.2K</td>
+                </tr>
+                <tr>
+                    <td>Year 10</td>
+                    <td>$655.1K</td>
+                    <td>$2,210.9K</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <button class="btn btn-primary" style="width: 100%; margin-top: 16px;">Export Report</button>
+    </div>
+</div>
+
+<div class="screen" id="alerts">
+    <div class="status-bar">
+        <span>9:41</span>
+        <span>📶 📡 🔋</span>
+    </div>
+    
+    <div class="header">
+        <div class="header-left">
+            <h1>Notifications</h1>
+            <p>Reminders</p>
+        </div>
+        <div class="header-icon">🔔</div>
+        <button class="menu-btn">☰</button>
+    </div>
+    
+    <div class="content">
+        <h2 class="section-title">Upcoming</h2>
+        
+        <div class="property-card">
+            <div class="property-info">
+                <label>Nov 15</label>
+                <span class="status-badge badge-pending">Pending</span>
+            </div>
+            <h3 style="font-size: 14px; margin: 8px 0; color: #333;">EMI Due</h3>
+            <div class="property-info" style="font-size: 12px;">
+                <value>Comfort Suites Conway</value>
+            </div>
+            <div class="property-info" style="font-size: 12px;">
+                <label>Amount:</label>
+                <value>$17,717</value>
+            </div>
+        </div>
+        
+        <div class="property-card">
+            <div class="property-info">
+                <label>Nov 20</label>
+                <span class="status-badge badge-pending">Pending</span>
+            </div>
+            <h3 style="font-size: 14px; margin: 8px 0; color: #333;">Property Tax</h3>
+            <div class="property-info" style="font-size: 12px;">
+                <value>Montgomery Alabama</value>
+            </div>
+        </div>
+        
+        <div class="property-card">
+            <div class="property-info">
+                <label>Dec 10</label>
+                <span class="status-badge badge-scheduled">Scheduled</span>
+            </div>
+            <h3 style="font-size: 14px; margin: 8px 0; color: #333;">Revaluation</h3>
+            <div class="property-info" style="font-size: 12px;">
+                <value>Comfort Suites Conway</value>
+            </div>
+        </div>
+        
+        <div class="property-card">
+            <div class="property-info">
+                <label>Dec 1</label>
+                <span class="status-badge badge-active">Achieved</span>
+            </div>
+            <h3 style="font-size: 14px; margin: 8px 0; color: #333;">ROI Milestone</h3>
+            <div class="property-info" style="font-size: 12px;">
+                <value>Portfolio ROI reached 15% target</value>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="screen" id="settings">
     <div class="status-bar">
         <span>9:41</span>
@@ -1890,14 +2783,14 @@
     <div class="header">
         <div class="header-left">
             <h1>Settings</h1>
-            <p>App Configuration</p>
+            <p>Account</p>
         </div>
         <div class="header-icon">⚙️</div>
-        <button class="menu-btn" onclick="openDrawer()">☰</button>
+        <button class="menu-btn">☰</button>
     </div>
     
     <div class="content">
-        <h2 class="section-title">User Profile</h2>
+        <h2 class="section-title">Profile</h2>
         
         <div class="form-group">
             <label>Full Name</label>
@@ -1910,158 +2803,147 @@
         </div>
         
         <div class="form-group">
-            <label>Phone Number</label>
-            <input type="tel" class="input-field" value="+1 (555) 123-4567">
+            <label>Phone</label>
+            <input type="tel" class="input-field" value="+1-234-567-8900">
         </div>
         
         <h2 class="section-title">Preferences</h2>
         
         <div class="form-group">
-            <label>Default Currency</label>
+            <label>Theme</label>
             <select class="input-field">
-                <option>USD ($)</option>
+                <option>Light</option>
+                <option selected>Dark</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Currency</label>
+            <select class="input-field">
+                <option selected>USD ($)</option>
                 <option>EUR (€)</option>
                 <option>GBP (£)</option>
             </select>
         </div>
         
-        <div class="form-group">
-            <label>Date Format</label>
-            <select class="input-field">
-                <option>MM/DD/YYYY</option>
-                <option>DD/MM/YYYY</option>
-                <option>YYYY-MM-DD</option>
-            </select>
-        </div>
+        <h2 class="section-title">Data Export</h2>
+        
+        <button class="btn btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="generatePropertyReportPDF(samplePropertyData)">Export as PDF</button>
+        <button class="btn btn-primary" style="width: 100%; margin-bottom: 10px;">Export as Excel</button>
+        <button class="btn btn-primary" style="width: 100%;">Export as CSV</button>
+        
+        <h2 class="section-title">Security</h2>
         
         <div class="form-group">
-            <label>Notification Settings</label>
-            <select class="input-field">
-                <option>All Notifications</option>
-                <option>Important Only</option>
-                <option>None</option>
-            </select>
+            <label>Change Password</label>
+            <input type="password" class="input-field" placeholder="Current password">
         </div>
         
-        <h2 class="section-title">Data Management</h2>
-        
-        <div class="button-group">
-            <button class="btn btn-secondary">Export Data</button>
-            <button class="btn btn-success">Backup Data</button>
+        <div class="form-group">
+            <input type="password" class="input-field" placeholder="New password">
         </div>
         
-        <div class="button-group">
-            <button class="btn btn-secondary">Sync with Cloud</button>
-            <button class="btn btn-success">Restore Data</button>
-        </div>
-        
-        <div class="button-group">
-            <button class="btn btn-secondary" style="background: #ef4444; color: white;">Reset App</button>
-            <button class="btn btn-success">Save Settings</button>
-        </div>
+        <button class="btn btn-success" style="width: 100%;">Save Changes</button>
     </div>
 </div>
 
 </div>
 
-<!-- BOTTOM NAVIGATION -->
 <div class="bottom-nav">
-    <a href="#" class="nav-item active" data-screen="dashboard">
+    <button class="nav-item active" data-screen="dashboard">
         <span>🏠</span>
-        <span>Dashboard</span>
-    </a>
-    <a href="#" class="nav-item" data-screen="properties">
+        <span>Home</span>
+    </button>
+    <button class="nav-item" data-screen="properties">
         <span>🏢</span>
         <span>Properties</span>
-    </a>
-    <a href="#" class="nav-item" data-screen="analytics">
+    </button>
+    <button class="nav-item" data-screen="analytics">
         <span>📊</span>
         <span>Analytics</span>
-    </a>
-    <a href="#" class="nav-item" data-screen="cash-flow">
-        <span>💰</span>
-        <span>Cash Flow</span>
-    </a>
-    <a href="#" class="nav-item" data-screen="alerts">
+    </button>
+    <button class="nav-item" data-screen="alerts">
         <span>🔔</span>
         <span>Alerts</span>
-    </a>
+    </button>
+    <button class="nav-item" data-screen="settings">
+        <span>⚙️</span>
+        <span>Settings</span>
+    </button>
 </div>
 
 <script>
-    function switchScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(screen => {
-            screen.classList.remove('active');
-        });
-        const target = document.getElementById(screenId);
-        if (target) {
-            target.classList.add('active');
+    document.addEventListener('DOMContentLoaded', function() {
+        const navItems = document.querySelectorAll('.nav-item');
+        const drawerNavItems = document.querySelectorAll('.drawer-nav-item');
+        const screens = document.querySelectorAll('.screen');
+        const menuBtn = document.getElementById('menuBtn');
+        const sideDrawer = document.getElementById('sideDrawer');
+        const drawerOverlay = document.getElementById('drawerOverlay');
+        const mobileContainer = document.getElementById('mobileContainer');
+        const menuBtns = document.querySelectorAll('.menu-btn');
+        
+        function switchScreen(screenId) {
+            screens.forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            document.getElementById(screenId).classList.add('active');
+            
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-screen') === screenId) {
+                    item.classList.add('active');
+                }
+            });
+            
+            drawerNavItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-screen') === screenId) {
+                    item.classList.add('active');
+                }
+            });
+            
+            closeDrawer();
         }
-        document.querySelectorAll('.nav-item').forEach(item => {
-            if (item.getAttribute('data-screen') === screenId) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
+        
+        function openDrawer() {
+            sideDrawer.classList.add('open');
+            drawerOverlay.classList.add('active');
+            mobileContainer.classList.add('drawer-open');
+        }
+        
+        function closeDrawer() {
+            sideDrawer.classList.remove('open');
+            drawerOverlay.classList.remove('active');
+            mobileContainer.classList.remove('drawer-open');
+        }
+        
+        navItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const screenId = this.getAttribute('data-screen');
+                switchScreen(screenId);
+            });
         });
-        document.querySelectorAll('.drawer-nav-item').forEach(item => {
-            if (item.getAttribute('data-screen') === screenId) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
+        
+        drawerNavItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const screenId = this.getAttribute('data-screen');
+                switchScreen(screenId);
+            });
         });
-        closeDrawer();
-        window.scrollTo(0, 0);
-    }
-    
-    function openDrawer() {
-        document.getElementById('sideDrawer').classList.add('open');
-        document.getElementById('drawerOverlay').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    function closeDrawer() {
-        document.getElementById('sideDrawer').classList.remove('open');
-        document.getElementById('drawerOverlay').classList.remove('active');
-        document.body.style.overflow = '';
-    }
-    
-    document.getElementById('drawerOverlay').addEventListener('click', closeDrawer);
-    
-    document.querySelectorAll('.drawer-nav-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            const screenId = this.getAttribute('data-screen');
-            switchScreen(screenId);
+        
+        menuBtns.forEach(btn => {
+            btn.addEventListener('click', openDrawer);
         });
+        
+        drawerOverlay.addEventListener('click', closeDrawer);
+        
+        window.switchScreen = switchScreen;
+        
+        switchScreen('dashboard');
     });
-    
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            const screenId = this.getAttribute('data-screen');
-            switchScreen(screenId);
-        });
-    });
-    
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            const tabId = this.getAttribute('data-tab');
-            const container = this.closest('.content');
-            
-            container.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            this.classList.add('active');
-            const target = document.getElementById(tabId);
-            if (target) {
-                target.classList.add('active');
-            }
-        });
-    });
-    
-    switchScreen('dashboard');
 </script>
 
 </body>
