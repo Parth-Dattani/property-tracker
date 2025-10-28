@@ -817,108 +817,133 @@
 <div class="mobile-container" id="mobileContainer">
     
     <!-- Home Screen -->
-    <div class="screen active" id="home-screen">
-        <div class="status-bar">
-            <span>9:41</span>
-            <span>📶 📡 🔋</span>
+    <!-- Updated Home Screen -->
+<div class="screen active" id="home-screen">
+    <div class="status-bar">
+        <span>9:41</span>
+        <span>📶 📡 🔋</span>
+    </div>
+    
+    <div class="header">
+        <div class="header-left">
+            <h1>Dashboard</h1>
+            <p>Your Portfolio</p>
+        </div>
+        <button class="menu-btn" id="menuBtn">☰</button>
+    </div>
+    
+    <div class="content">
+        <h2 class="section-title">Portfolio Summary</h2>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Properties</h3>
+                <div class="value" id="total-properties">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Value</h3>
+                <div class="value" id="total-value">$0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Monthly Cash Flow</h3>
+                <div class="value" id="total-cash-flow">$0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Occupancy Rate</h3>
+                <div class="value" id="occupancy-rate">0%</div>
+            </div>
         </div>
         
-        <div class="header">
-            <div class="header-left">
-                <h1>Dashboard</h1>
-                <p>Your Portfolio</p>
-            </div>
-            <button class="menu-btn" id="menuBtn">☰</button>
+        <h2 class="section-title">Key Metrics</h2>
+        
+        <div class="card">
+            <div class="card-label">Total Equity</div>
+            <div class="card-value" id="total-equity">$0</div>
         </div>
         
-        <div class="content">
-            <h2 class="section-title">Portfolio Summary</h2>
-            
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Total Properties</h3>
-                    <div class="value" id="total-properties">12</div>
+        <div class="card">
+            <div class="card-label">Loan Balance</div>
+            <div class="card-value" id="total-loan-balance">$0</div>
+        </div>
+        
+        <div class="card">
+            <div class="card-label">Annual NOI</div>
+            <div class="card-value" id="total-annual-noi">$0</div>
+        </div>
+        
+        <h2 class="section-title">Recent Properties</h2>
+        
+        <div id="properties-list">
+            <div class="property-card">
+                <h3>Comfort Suites Conway</h3>
+                <div class="property-info">
+                    <label>Address:</label>
+                    <value>705 Museum Rd</value>
                 </div>
-                <div class="stat-card">
-                    <h3>Total Value</h3>
-                    <div class="value" id="total-value">$8.5M</div>
+                <div class="property-info">
+                    <label>Purchase Price:</label>
+                    <value>$4.75M</value>
                 </div>
-                <div class="stat-card">
-                    <h3>Total ROI</h3>
-                    <div class="value" id="total-roi">15.2%</div>
+                <div class="property-info">
+                    <label>Units:</label>
+                    <value>70</value>
                 </div>
-                <div class="stat-card">
-                    <h3>Cash Flow</h3>
-                    <div class="value" id="total-cash-flow">$12.5K</div>
+                <div class="property-info">
+                    <label>Cap Rate:</label>
+                    <value>7.9%</value>
+                </div>
+                <div class="property-info">
+                    <label>Cash Flow:</label>
+                    <value>$3,250</value>
                 </div>
             </div>
             
-            <h2 class="section-title">Key Metrics</h2>
-            
-            <div class="card">
-                <div class="card-label">Total Equity</div>
-                <div class="card-value" id="total-equity">$2.1M</div>
-            </div>
-            
-            <div class="card">
-                <div class="card-label">Loan Balance</div>
-                <div class="card-value" id="total-loan-balance">$6.4M</div>
-            </div>
-            
-            <div class="card">
-                <div class="card-label">Annual NOI</div>
-                <div class="card-value" id="total-annual-noi">$685K</div>
-            </div>
-            
-            <h2 class="section-title">Recent Properties</h2>
-            
-            <div id="properties-list">
-                <div class="property-card">
-                    <h3>Comfort Suites Conway</h3>
-                    <div class="property-info">
-                        <label>Address:</label>
-                        <value>705 Museum Rd</value>
-                    </div>
-                    <div class="property-info">
-                        <label>Purchase Price:</label>
-                        <value>$4.75M</value>
-                    </div>
-                    <div class="property-info">
-                        <label>Units:</label>
-                        <value>70</value>
-                    </div>
-                    <div class="property-info">
-                        <label>Cap Rate:</label>
-                        <value>7.9%</value>
-                    </div>
-                    <div class="property-info">
-                        <label>Cash Flow:</label>
-                        <value>$3,250</value>
-                    </div>
+            <div class="property-card">
+                <h3>Montgomery, AL</h3>
+                <div class="property-info">
+                    <label>Address:</label>
+                    <value>123 Evergreen St</value>
                 </div>
-                
-                <div class="property-card">
-                    <h3>Montgomery, AL</h3>
-                    <div class="property-info">
-                        <label>Address:</label>
-                        <value>123 Evergreen St</value>
-                    </div>
-                    <div class="property-info">
-                        <label>Purchase Price:</label>
-                        <value>$150K</value>
-                    </div>
-                    <div class="property-info">
-                        <label>Units:</label>
-                        <value>1</value>
-                    </div>
-                    <div class="property-info">
-                        <label>Cap Rate:</label>
-                        <value>8.2%</value>
-                    </div>
+                <div class="property-info">
+                    <label>Purchase Price:</label>
+                    <value>$150K</value>
                 </div>
+                <div class="property-info">
+                    <label>Units:</label>
+                    <value>1</value>
+                </div>
+                <div class="property-info">
+                    <label>Cap Rate:</label>
+                    <value>8.2%</value>
+                </div>
+            </div>
+        </div>
+        
+        <h2 class="section-title">Recent Activity</h2>
+        
+        <div class="property-card">
+            <div class="property-info">
+                <label>Today</label>
+                <span class="status-badge badge-active">Completed</span>
+            </div>
+            <h3 style="font-size: 14px; margin: 8px 0; color: #333;">Property Added</h3>
+            <div class="property-info" style="font-size: 12px;">
+                <value>Montgomery, AL property added to portfolio</value>
+            </div>
+        </div>
+        
+        <div class="property-card">
+            <div class="property-info">
+                <label>Yesterday</label>
+                <span class="status-badge badge-active">Completed</span>
+            </div>
+            <h3 style="font-size: 14px; margin: 8px 0; color: #333;">Mortgage Payment</h3>
+            <div class="property-info" style="font-size: 12px;">
+                <value>Comfort Suites Conway - $17,717</value>
             </div>
         </div>
     </div>
+</div>
     
     <!-- Add Property Screen -->
     <div class="screen" id="add-property-screen">
@@ -1862,50 +1887,90 @@
         
         propertiesList.innerHTML = html;
     }
+// Update the updateDashboardStats function
+function updateDashboardStats() {
+    const totalProperties = properties.length;
+    const totalValue = properties.reduce((sum, prop) => sum + prop.price, 0);
+    const totalRent = properties.reduce((sum, prop) => sum + prop.rent, 0);
+    const totalExpenses = properties.reduce((sum, prop) => sum + (prop.expenses || 0), 0);
     
-    function updateDashboardStats() {
-        const totalProperties = properties.length;
-        const totalValue = properties.reduce((sum, prop) => sum + prop.price, 0);
-        const totalRent = properties.reduce((sum, prop) => sum + prop.rent, 0);
-        const totalExpenses = properties.reduce((sum, prop) => sum + (prop.expenses || 0), 0);
-        
-        // Calculate average cap rate
-        let totalCapRate = 0;
-        properties.forEach(prop => {
-            totalCapRate += calculateCapRate(prop);
-        });
-        const avgCapRate = totalProperties > 0 ? (totalCapRate / totalProperties).toFixed(1) : 0;
-        
-        // Calculate total ROI (simplified)
-        const totalROI = totalProperties > 0 ? (totalRent * 12 - totalExpenses) / totalValue * 100 : 0;
-        
-        // Calculate total cash flow
-        const totalCashFlow = totalRent - (totalExpenses / 12);
-        
-        // Update DOM elements
-        document.getElementById('total-properties').textContent = totalProperties;
-        document.getElementById('total-value').textContent = `$${Number(totalValue).toLocaleString()}`;
-        document.getElementById('total-roi').textContent = `${totalROI.toFixed(1)}%`;
-        document.getElementById('total-cash-flow').textContent = `$${Number(totalCashFlow).toLocaleString()}`;
-        
-        // Simplified calculations for other metrics
-        document.getElementById('total-equity').textContent = `$${Number(totalValue * 0.3).toLocaleString()}`;
-        document.getElementById('total-loan-balance').textContent = `$${Number(totalValue * 0.7).toLocaleString()}`;
-        document.getElementById('total-annual-noi').textContent = `$${Number(totalRent * 12 - totalExpenses).toLocaleString()}`;
+    // Calculate total cash flow
+    const totalCashFlow = totalRent - (totalExpenses / 12);
+    
+    // Calculate occupancy rate (simplified - assuming all units are occupied)
+    const totalUnits = properties.reduce((sum, prop) => sum + parseInt(prop.units), 0);
+    const occupancyRate = totalUnits > 0 ? 95 : 0; // Simplified calculation
+    
+    // Update DOM elements
+    document.getElementById('total-properties').textContent = totalProperties;
+    document.getElementById('total-value').textContent = `$${Number(totalValue).toLocaleString()}`;
+    document.getElementById('total-cash-flow').textContent = `$${Number(totalCashFlow).toLocaleString()}`;
+    document.getElementById('occupancy-rate').textContent = `${occupancyRate}%`;
+    
+    // Simplified calculations for other metrics
+    document.getElementById('total-equity').textContent = `$${Number(totalValue * 0.3).toLocaleString()}`;
+    document.getElementById('total-loan-balance').textContent = `$${Number(totalValue * 0.7).toLocaleString()}`;
+    document.getElementById('total-annual-noi').textContent = `$${Number(totalRent * 12 - totalExpenses).toLocaleString()}`;
+}
+
+// Update the updatePropertiesList function
+function updatePropertiesList() {
+    const propertiesList = document.getElementById('properties-list');
+    
+    if (properties.length === 0) {
+        propertiesList.innerHTML = '<p>No properties added yet. Click "Add Property" to get started.</p>';
+        return;
     }
     
-    function calculateCapRate(property) {
-        const annualRent = property.rent * 12;
-        const annualExpenses = property.expenses || 0;
-        const noi = annualRent - annualExpenses;
-        return property.price > 0 ? ((noi / property.price) * 100).toFixed(1) : 0;
-    }
+    let html = '';
+    properties.forEach(property => {
+        const capRate = calculateCapRate(property);
+        const cashFlow = calculateCashFlow(property);
+        
+        html += `
+            <div class="property-card">
+                <h3>${property.name}</h3>
+                <div class="property-info">
+                    <label>Address:</label>
+                    <value>${property.city}</value>
+                </div>
+                <div class="property-info">
+                    <label>Purchase Price:</label>
+                    <value>$${Number(property.price).toLocaleString()}</value>
+                </div>
+                <div class="property-info">
+                    <label>Units:</label>
+                    <value>${property.units}</value>
+                </div>
+                <div class="property-info">
+                    <label>Cap Rate:</label>
+                    <value>${capRate}%</value>
+                </div>
+                <div class="property-info">
+                    <label>Cash Flow:</label>
+                    <value>$${cashFlow}</value>
+                </div>
+            </div>
+        `;
+    });
     
-    function calculateCashFlow(property) {
-        const monthlyRent = property.rent;
-        const monthlyExpenses = (property.expenses || 0) / 12;
-        return Number(monthlyRent - monthlyExpenses).toFixed(0);
-    }
+    propertiesList.innerHTML = html;
+}
+
+// Update the calculateCapRate function
+function calculateCapRate(property) {
+    const annualRent = property.rent * 12;
+    const annualExpenses = property.expenses || 0;
+    const noi = annualRent - annualExpenses;
+    return property.price > 0 ? ((noi / property.price) * 100).toFixed(1) : 0;
+}
+
+// Update the calculateCashFlow function
+function calculateCashFlow(property) {
+    const monthlyRent = property.rent;
+    const monthlyExpenses = (property.expenses || 0) / 12;
+    return Number(monthlyRent - monthlyExpenses).toFixed(0);
+}
     
     // Setup event listeners for form elements
     function setupEventListeners() {
